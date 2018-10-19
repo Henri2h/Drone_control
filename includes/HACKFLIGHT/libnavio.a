@@ -1,0 +1,2349 @@
+!<arch>
+//                                              56        `
+accelerometer.hpp/
+magnetometer.hpp/
+surfacemount.hpp/
+
+loiter.hpp/     0           0     0     644     3178      `
+/*
+   loiter.hpp : PID-based loiter
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "debug.hpp"
+#include "datatypes.hpp"
+#include "receiver.hpp"
+#include "pidcontroller.hpp"
+
+namespace hf {
+
+
+    class Loiter : public PID_Controller {
+
+        friend class Hackflight;
+
+        public:
+
+        Loiter(float altitudeP, float altitudeD, float cyclicP, 
+                float throttleScale=1.f, float minAltitude=0.5)
+        {
+            _altitudeP     = altitudeP;
+            _altitudeD     = altitudeD;
+            _cyclicP       = cyclicP;
+            _throttleScale = throttleScale;
+            _minAltitude   = minAltitude;
+
+            _inBandPrev = false;
+        }
+
+        protected:
+
+        virtual bool modifyDemands(state_t & state, demands_t & demands) 
+        {
+            // Don't do anything till we've reached sufficient altitude
+            if (state.altitude < _minAltitude) return false;
+
+            // Reset altitude target if moved into stick deadband
+            bool inBandCurr = inBand(demands.throttle);
+            if (inBandCurr && !_inBandPrev) {
+                _altitudeTarget = state.altitude;
+            }
+            _inBandPrev = inBandCurr;
+
+            // Throttle: inside stick deadband, adjust by PID; outside deadband, respond to stick demand
+            demands.throttle = inBandCurr ?  
+                _altitudeP * (_altitudeTarget-state.altitude) - _altitudeD * state.variometer: 
+                _throttleScale*demands.throttle;
+
+            // Pitch/roll
+            demands.pitch = adjustCyclic(demands.pitch, state.velocityForward);
+            demands.roll  = adjustCyclic(demands.roll,  state.velocityRightward);
+
+            return inBandCurr;
+        }
+
+        virtual bool shouldFlashLed(void) override 
+        {
+            return true;
+        }
+
+        bool inBand(float demand)
+        {
+            return fabs(demand) < Receiver::STICK_DEADBAND; 
+        }
+
+        float adjustCyclic(float demand, float velocity)
+        {
+            // Inside throttle deadband, adjust pitch/roll demand by PD controller; outside deadband, leave it as-is
+            return inBand(demand) ? demand - _cyclicP*velocity: demand; 
+        }
+
+        // set by constructor
+        float _altitudeP;
+        float _altitudeD;
+        float _cyclicP;
+        float _throttleScale;
+        float _minAltitude;
+
+        // modified in-flight
+        float _altitudeTarget;
+        bool  _inBandPrev;
+
+    };  // class Loiter
+
+} // namespace
+stabilizer.hpp/ 0           0     0     644     7849      `
+/*
+   stabilizer.hpp : PID-based stabilization 
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <cstdint>
+#include <cstring>
+#include <algorithm>
+#include <limits>
+#include <cmath>
+
+#include "receiver.hpp"
+#include "filters.hpp"
+#include "debug.hpp"
+#include "datatypes.hpp"
+#include "pidcontroller.hpp"
+
+namespace hf {
+
+    // shared with Hackflight class
+    enum {
+        AXIS_ROLL = 0,
+        AXIS_PITCH,
+        AXIS_YAW
+    };
+
+    class Stabilizer : public PID_Controller {
+
+        friend class Hackflight;
+
+        private: 
+
+            // Arbitrary constants
+            const float GYRO_WINDUP_MAX             = 16.0f;
+            const float BIG_GYRO_DEGREES_PER_SECOND = 40.0f; 
+            const float BIG_YAW_DEMAND              = 0.1f;
+            const float MAX_ARMING_ANGLE_DEGREES    = 25.0f;
+
+            // PID constants set in constructor
+            float _demandsToRate;
+            float _levelP;
+            float _gyroCyclicP;
+            float _gyroCyclicI;
+            float _gyroCyclicD; 
+            float _gyroYawP; 
+            float _gyroYawI;
+
+            float _lastError[2];
+            float _gyroDeltaError1[2]; 
+            float _gyroDeltaError2[2];
+            float _errorGyroI[3];
+
+            // For PTerm computation
+            float _PTerm[2]; // roll, pitch
+            float _demandRoll;
+            float _demandPitch;
+
+            // proportion of cyclic demand compared to its maximum
+            float _proportionalCyclicDemand;
+
+            float _bigGyroRate;
+
+            float degreesToRadians(float deg)
+            {
+                return M_PI * deg / 180.;
+            }
+
+            float computeITermGyro(float error, float rateI, float rcCommand, float gyro[3], uint8_t axis)
+            {
+                // Avoid integral windup
+                _errorGyroI[axis] = Filter::constrainAbs(_errorGyroI[axis] + error, GYRO_WINDUP_MAX);
+
+                // Reset integral on quick gyro change or large gyroYaw command
+                if ((fabs(gyro[axis]) > _bigGyroRate) || ((axis == AXIS_YAW) && (fabs(rcCommand) > BIG_YAW_DEMAND)))
+                    _errorGyroI[axis] = 0;
+
+                return (_errorGyroI[axis] * rateI);
+            }
+
+            float computePid(float rateP, float PTerm, float ITerm, float DTerm, float gyro[3], uint8_t axis)
+            {
+                PTerm = (PTerm * _demandsToRate -gyro[axis]) * rateP;
+
+                return PTerm + ITerm + DTerm;
+            }
+
+            // Computes leveling PID for pitch or roll
+            void computeCyclicPTerm(float demand, float eulerAngles[3], uint8_t imuAxis, uint8_t auxState)
+            {
+                if (auxState == 0) {
+                    _PTerm[imuAxis] = demand; 
+                }
+
+                else {
+
+                    _PTerm[imuAxis] = (demand - eulerAngles[imuAxis]) * _levelP;  
+                    _PTerm[imuAxis] = Filter::complementary(demand, _PTerm[imuAxis], _proportionalCyclicDemand); 
+                }
+            }
+
+            // Computes leveling PID for pitch or roll
+            float computeCyclicPid(float rcCommand, float gyro[3], uint8_t imuAxis)
+            {
+                float error = rcCommand * _demandsToRate - gyro[imuAxis];
+                // I
+                float ITerm = computeITermGyro(error, _gyroCyclicI, rcCommand, gyro, imuAxis);
+                ITerm *= _proportionalCyclicDemand;
+
+                // D
+                float _gyroDeltaError = error - _lastError[imuAxis];
+                _lastError[imuAxis] = error;
+                float _gyroDeltaErrorSum = _gyroDeltaError1[imuAxis] + _gyroDeltaError2[imuAxis] + _gyroDeltaError;
+                _gyroDeltaError2[imuAxis] = _gyroDeltaError1[imuAxis];
+                _gyroDeltaError1[imuAxis] = _gyroDeltaError;
+                float DTerm = _gyroDeltaErrorSum * _gyroCyclicD; 
+
+                return computePid(_gyroCyclicP, _PTerm[imuAxis], ITerm, DTerm, gyro, imuAxis);
+            }
+
+            void resetIntegral(void)
+            {
+                _errorGyroI[AXIS_ROLL] = 0;
+                _errorGyroI[AXIS_PITCH] = 0;
+                _errorGyroI[AXIS_YAW] = 0;
+            }
+
+        protected:
+
+            float maxArmingAngle;
+
+        public:
+
+            Stabilizer(float levelP, float gyroCyclicP, float gyroCyclicI, float gyroCyclicD, float gyroYawP, float gyroYawI, float demandsToRate = 1.0f) :
+                _demandsToRate(demandsToRate),
+                _levelP(levelP), 
+                _gyroCyclicP(gyroCyclicP), 
+                _gyroCyclicI(gyroCyclicI), 
+                _gyroCyclicD(gyroCyclicD), 
+                _gyroYawP(gyroYawP), 
+                _gyroYawI(gyroYawI) 
+            {                // Zero-out previous values for D term
+                for (uint8_t axis=0; axis<2; ++axis) {
+                    _lastError[axis] = 0;
+                    _gyroDeltaError1[axis] = 0;
+                    _gyroDeltaError2[axis] = 0;
+                }
+
+                // Convert degree parameters to radians for use later
+                _bigGyroRate = degreesToRadians(BIG_GYRO_DEGREES_PER_SECOND);
+                maxArmingAngle = degreesToRadians(MAX_ARMING_ANGLE_DEGREES);
+
+                // Initialize gyro error integral
+                resetIntegral();
+            }
+
+            void updateEulerAngles(float eulerAngles[3], uint8_t auxState)
+            {
+                computeCyclicPTerm(_demandRoll,  eulerAngles, 0, auxState);
+                computeCyclicPTerm(_demandPitch, eulerAngles, 1, auxState);
+            }
+
+            void updateReceiver(demands_t & demands, bool throttleIsDown)
+            {
+                _demandRoll  = demands.roll;
+                _demandPitch = demands.pitch;
+
+                // Compute proportion of cyclic demand compared to its maximum
+                _proportionalCyclicDemand = Filter::max(fabs(_demandRoll), fabs(_demandPitch)) / 0.5f;
+                
+                // When landed, reset integral component of PID
+                if (throttleIsDown) {
+                    resetIntegral();
+                }
+            }
+
+            bool modifyDemands(state_t & state, demands_t & demands)
+            {
+                // Pitch, roll use leveling based on Euler angles
+                demands.roll  = computeCyclicPid(demands.roll,  state.angularVelocities, AXIS_ROLL);
+                demands.pitch = computeCyclicPid(demands.pitch, state.angularVelocities, AXIS_PITCH);
+
+                // For gyroYaw, P term comes directly from RC command, and D term is zero
+                float yawError = demands.yaw * _demandsToRate - state.angularVelocities[AXIS_YAW];
+                float ITermGyroYaw = computeITermGyro(yawError, _gyroYawI, demands.yaw, state.angularVelocities, AXIS_YAW);
+                demands.yaw = computePid(_gyroYawP, demands.yaw, ITermGyroYaw, 0, state.angularVelocities, AXIS_YAW);
+
+                // Prevent "gyroYaw jump" during gyroYaw correction
+                demands.yaw = Filter::constrainAbs(demands.yaw, 0.1 + fabs(demands.yaw));
+
+                // We've always gotta do this!
+                return true;
+            }
+
+    };  // class Stabilize
+
+} // namespace
+
+sbus.hpp/       0           0     0     644     3137      `
+/*
+   sbus.hpp : Futaba SBUS receiver support for Arduino flight controllers
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "receiver.hpp"
+#include <SBUSRX.h>
+
+static SBUSRX rx;
+
+// Support different UARTs
+
+static HardwareSerial * _hardwareSerial;
+
+void serialEvent1(void)
+{
+    rx.handleSerialEvent(micros());
+}
+
+void serialEvent2(void)
+{
+    rx.handleSerialEvent(micros());
+}
+
+void serialEvent3(void)
+{
+    rx.handleSerialEvent(micros());
+}
+
+uint8_t sbusSerialAvailable(void)
+{
+    return _hardwareSerial->available();
+}
+
+uint8_t sbusSerialRead(void)
+{
+    return _hardwareSerial->read();
+}
+
+namespace hf {
+
+    class SBUS_Receiver : public Receiver {
+
+        private:
+
+            const uint16_t MAX_FAILSAFE = 10;
+
+            // Support different Arduino hardware
+            uint16_t _serialConfig;
+
+            // These values must persist between calls to readRawvals()
+            float    _channels[16];
+            uint16_t _failsafeCount;
+
+        protected:
+
+            void begin(void)
+            {
+                _hardwareSerial->begin(100000, _serialConfig);
+            }
+
+            bool gotNewFrame(void)
+            {
+                if (rx.gotNewFrame()) {
+
+                    uint8_t failsafe = 0;
+                    uint16_t lostFrames = 0;
+
+                    rx.getChannelValuesNormalized(_channels, &failsafe, &lostFrames);
+
+                    // accumulate consecutive failsafe hits
+                    if (failsafe) {
+                        _failsafeCount++;
+                    }
+                    else { // reset count
+                        _failsafeCount = 0;
+                    }
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            void readRawvals(void)
+            {
+                memset(rawvals, 0, CHANNELS*sizeof(float));
+                memcpy(rawvals, _channels, CHANNELS*sizeof(float));
+            }
+
+            bool lostSignal(void)
+            {
+                return _failsafeCount > MAX_FAILSAFE;
+            }
+
+        public:
+
+            SBUS_Receiver(
+                    const uint8_t channelMap[6], 
+                    uint16_t serialConfig,
+                    HardwareSerial * hardwareSerial=&Serial1) 
+                :  Receiver(channelMap) 
+            { 
+                _serialConfig = serialConfig;
+                _hardwareSerial = hardwareSerial;
+                _failsafeCount = 0;
+            }
+
+    }; // class SBUS_Receiver
+
+} // namespace
+
+dsmx.hpp/       0           0     0     644     2075      `
+/*
+   dsmx.hpp : Spektrum DSMX support for Arduino flight controllers
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "debug.hpp"
+#include "receiver.hpp"
+#include <DSMRX.h>
+
+static DSM2048 rx;
+
+// Support different UARTs
+
+static HardwareSerial * _hardwareSerial;
+
+void serialEvent1(void)
+{
+    rx.handleSerialEvent(micros());
+}
+
+void serialEvent2(void)
+{
+    rx.handleSerialEvent(micros());
+}
+
+void serialEvent3(void)
+{
+    rx.handleSerialEvent(micros());
+}
+
+uint8_t dsmSerialAvailable(void)
+{
+    return _hardwareSerial->available();
+}
+
+uint8_t dsmSerialRead(void)
+{
+    return _hardwareSerial->read();
+}
+
+
+namespace hf {
+
+    class DSMX_Receiver : public Receiver {
+
+         protected:
+
+            void begin(void)
+            {
+                _hardwareSerial->begin(115200);
+            }
+
+            bool gotNewFrame(void)
+            {
+                return rx.gotNewFrame();
+            }
+
+            void readRawvals(void)
+            {
+                rx.getChannelValuesNormalized(rawvals, CHANNELS);
+            }
+
+            bool lostSignal(void)
+            {
+                return rx.timedOut(micros());
+            }
+
+        public:
+
+            DSMX_Receiver(const uint8_t channelMap[6], HardwareSerial * hardwareSerial=&Serial1) 
+                :  Receiver(channelMap) 
+            { 
+                _hardwareSerial = hardwareSerial;
+            }
+
+    }; // class DSMX_Receiver
+
+} // namespace
+
+dummy.hpp/      0           0     0     644     1397      `
+/*
+   dummy.hpp : "Dummy" receiver subclass for prototyping
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "receiver.hpp"
+
+static constexpr uint8_t DEFAULT_MAP[6] = {0,1,2,3,4,5};
+
+namespace hf {
+
+    class Dummy_Receiver : public Receiver {
+
+        protected:
+
+            void begin(void)
+            {
+            }
+
+            virtual bool gotNewFrame(void) override
+            {
+                return false;
+            }
+
+            void readRawvals(void)
+            {
+            }
+
+            bool lostSignal(void)
+            {
+                return false;
+            }
+
+        public:
+
+            Dummy_Receiver(void) : Receiver(DEFAULT_MAP)
+            { 
+            }
+
+    }; // class Dummy_Receiver
+
+} // namespace hf
+
+cppm.hpp/       0           0     0     644     1886      `
+/*
+   cppm.hpp : CPPMRX receiver support for Arduino-based flight controllers
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "receiver.hpp"
+#include <CPPMRX.h>
+
+namespace hf {
+
+    class CPPM_Receiver : public Receiver {
+
+        private:
+
+            static const uint16_t PPM_MIN = 990;
+            static const uint16_t PPM_MAX = 2020;
+
+            CPPMRX * rx;
+
+        protected:
+
+            void begin(void)
+            {
+                rx->begin();
+            }
+
+            bool gotNewFrame(void)
+            {
+                return rx->gotNewFrame();
+            }
+
+            void readRawvals(void)
+            {
+                uint16_t rcData[6];
+
+                rx->computeRC(rcData);
+
+                for (uint8_t k=0; k<6; k++) {
+
+                    rawvals[k] = 2.f * (rcData[k] - PPM_MIN) / (PPM_MAX - PPM_MIN) - 1;
+                }
+            }
+
+            bool lostSignal(void)
+            {
+                return false;
+            }
+
+        public:
+
+            CPPM_Receiver(uint8_t pin, const uint8_t channelMap[6]) : Receiver(channelMap) 
+            { 
+                rx = new CPPMRX(pin, 6);
+            }
+
+    }; // class CPPM_Receiver
+
+} // namespace hf
+quadx.hpp/      0           0     0     644     1422      `
+/*
+   quadx.hpp : Mixer subclass for X-configuration quadcopters
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MEReceiverHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "board.hpp"
+#include "debug.hpp"
+#include "mixer.hpp"
+#include "datatypes.hpp"
+
+#include <cstring>
+
+namespace hf {
+
+    class MixerQuadX : public Mixer {
+
+        public:
+
+            MixerQuadX(void) : Mixer(4)
+            {
+                //                      T   A   E   R
+                motorDirections[0] = { +1, -1, +1, +1 };    // right rear
+                motorDirections[1] = { +1, -1, -1, -1 };    // right front
+                motorDirections[2] = { +1, +1, +1, -1 };    // left rear
+                motorDirections[3] = { +1, +1, -1, +1 };    // left front
+            }
+    };
+
+} // namespace
+butterfly.hpp/  0           0     0     644     6168      `
+/*
+   butterfly.hpp : Implementation of Hackflight Board routines for Butterfly
+                   dev board + MPU9250 IMU + MS5637 barometer + brushless motors
+
+   Additional libraries required: https://github.com/simondlevy/MPU9250
+                                  https://github.com/simondlevy/MS5637
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <Wire.h>
+#include <Servo.h>
+
+#include <MPU9250_Passthru.h> 
+
+#include "filters.hpp"
+#include "hackflight.hpp"
+#include "softquat.hpp"
+
+namespace hf {
+
+    // Interrupt support 
+    static bool gotNewData;
+    static void interruptHandler()
+    {
+        gotNewData = true;
+    }
+
+    class Butterfly : public SoftwareQuaternionBoard {
+
+        private:
+
+            // Motor pins
+            const uint8_t MOTOR_PINS[4] = {3, 4, 5, 6};
+
+            // Min, max PWM values
+            const uint16_t PWM_MIN = 1000;
+            const uint16_t PWM_MAX = 2000;
+
+            // Butterfly board follows Arduino standard for LED pin
+            const uint8_t LED_PIN = 13;
+
+            // MPU9250 add-on board has interrupt on Butterfly pin 8
+            const uint8_t INTERRUPT_PIN = 8;
+
+            // Paramters to experiment with ------------------------------------------------------------------------
+
+            // MPU9250 full-scale settings
+            static const MPUIMU::Ascale_t ASCALE  = MPUIMU::AFS_8G;
+            static const MPUIMU::Gscale_t GSCALE  = MPUIMU::GFS_2000DPS;
+            static const MPU9250::Mscale_t MSCALE = MPU9250::MFS_16BITS;
+            static const MPU9250::Mmode_t  MMODE  = MPU9250::M_100Hz;
+
+            // SAMPLE_RATE_DIVISOR: (1 + SAMPLE_RATE_DIVISOR) is a simple divisor of the fundamental 1000 kHz rate of the gyro and accel, so 
+            // SAMPLE_RATE_DIVISOR = 0 means 1 kHz sample rate for both accel and gyro, 4 means 200 Hz, etc.
+            static const uint8_t SAMPLE_RATE_DIVISOR = 0;         
+
+            // Instance variables -----------------------------------------------------------------------------------
+
+            // Use the MPU9250 in pass-through mode
+            MPU9250_Passthru _imu = MPU9250_Passthru(ASCALE, GSCALE, MSCALE, MMODE, SAMPLE_RATE_DIVISOR);
+
+       protected:
+
+            void delayMilliseconds(uint32_t msec)
+            {
+                delay(msec);
+            }
+
+            void setLed(bool isOn)
+            { 
+                digitalWrite(LED_PIN, isOn ? LOW : HIGH);
+            }
+
+            uint8_t serialAvailableBytes(void)
+            {
+                return Serial.available();
+            }
+
+            uint8_t serialReadByte(void)
+            {
+                return Serial.read();
+            }
+
+            void serialWriteByte(uint8_t c)
+            {
+                Serial.write(c);
+            }
+
+            void writeMotor(uint8_t index, float value)
+            {
+                analogWrite(MOTOR_PINS[index], (uint16_t)(PWM_MIN+value*(PWM_MAX-PWM_MIN)) >> 3);
+            }
+
+            virtual uint32_t getMicroseconds(void) override
+            {
+                return micros();
+            }
+
+            void delaySeconds(float sec)
+            {
+                delay((uint32_t)(1000*sec));
+            }
+
+
+            bool imuRead(void)
+            {
+                if (gotNewData) {
+
+                    gotNewData = false;
+
+                    if (_imu.checkNewAccelGyroData()) {
+
+                        _imu.readAccelerometer(_ax, _ay, _az);
+                        _imu.readGyrometer(_gx, _gy, _gz);
+
+                        // Negate to support board orientation
+                        _ax = -_ax;
+                        _gy = -_gy;
+                        _gz = -_gz;
+
+                        return true;
+
+                    } 
+                } 
+
+                return false;
+            }
+
+        public:
+
+            Butterfly(void)
+            {
+                // Begin serial comms
+                Serial.begin(115200);
+
+                // Setup LED pin and turn it off
+                pinMode(LED_PIN, OUTPUT);
+                digitalWrite(LED_PIN, HIGH);
+
+                // Set up the interrupt pin, it's set as active high, push-pull
+                pinMode(INTERRUPT_PIN, INPUT);
+                attachInterrupt(INTERRUPT_PIN, interruptHandler, RISING);  
+
+                // Connect to the ESCs and send them the baseline values
+                for (uint8_t k=0; k<4; ++k) {
+                  pinMode(MOTOR_PINS[k], OUTPUT);
+                  analogWrite(MOTOR_PINS[k], PWM_MIN>>3);
+                }
+
+                // Start I^2C
+                Wire.begin();
+                Wire.setClock(400000); // I2C frequency at 400 kHz
+
+                // Wait a bit
+                delay(100);
+
+                // Start the MPU9250
+                switch (_imu.begin()) {
+
+                    case MPUIMU::ERROR_IMU_ID:
+                        error("Bad IMU device ID");
+                        break;
+                    case MPUIMU::ERROR_MAG_ID:
+                        error("Bad magnetometer device ID");
+                        break;
+                    case MPUIMU::ERROR_SELFTEST:
+                        //error("Failed self-test");
+                        break;
+                    default:
+                        break;
+                }
+
+                // Do general real-board initialization
+                RealBoard::init();
+            }
+
+
+    }; // class Butterfly
+
+    void Board::outbuf(char * buf)
+    {
+        Serial.print(buf);
+    }
+
+} // namespace hf
+ladybug.hpp/    0           0     0     644     5408      `
+/*
+   ladybug.hpp : Ladybug Flight Controller implementation of Hackflight Board routines
+
+   Uses EM7180 SENtral Sensor Hub in master mode mode
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <Wire.h>
+#include <EM7180_Master.h>
+#include <stdarg.h>
+#include "hackflight.hpp"
+#include "realboard.hpp"
+
+
+namespace hf {
+
+    class Ladybug : public RealBoard {
+
+        private:
+
+            // Tunable EM7180 parameters
+            static const uint8_t  MAG_RATE       = 100;  // Hz
+            static const uint16_t ACCEL_RATE     = 330;  // Hz
+            static const uint16_t GYRO_RATE      = 330;  // Hz
+            static const uint8_t  BARO_RATE      = 50;   // Hz
+            static const uint8_t  Q_RATE_DIVISOR = 5;    // 1/5 gyro rate
+
+            // Tindie version has LED on pin A4, but we support older version with LED on pin A1
+            uint8_t _led_pin;
+
+            const uint8_t MOTOR_PINS[4] = {13, A2, 3, 11};
+
+            EM7180_Master _sentral = EM7180_Master(MAG_RATE, ACCEL_RATE, GYRO_RATE, BARO_RATE, Q_RATE_DIVISOR);
+
+            void checkEventStatus(void)
+            {
+                _sentral.checkEventStatus();
+
+                if (_sentral.gotError()) {
+                    while (true) {
+                        Serial.print("ERROR: ");
+                        Serial.println(_sentral.getErrorString());
+                    }
+                }
+            }
+
+            void delaySeconds(float sec)
+            {
+                delay((uint32_t)(1000*sec));
+            }
+
+            void setLed(bool isOn)
+            { 
+                digitalWrite(_led_pin, isOn ? HIGH : LOW);
+            }
+
+            uint8_t serialAvailableBytes(void)
+            {
+                return Serial.available();
+            }
+
+            uint8_t serialReadByte(void)
+            {
+                return Serial.read();
+            }
+
+            void serialWriteByte(uint8_t c)
+            {
+                Serial.write(c);
+            }
+
+            virtual uint32_t getMicroseconds(void) override
+            {
+                return micros();
+            }
+
+            void writeMotor(uint8_t index, float value)
+            {
+                // Scale motor value from [0,1] to [0,255]
+                analogWrite(MOTOR_PINS[index], (uint8_t)(value * 255));
+            }
+
+            bool getGyrometer(float gyro[3])
+            {
+                // Since gyro is updated most frequently, use it to drive SENtral polling
+                checkEventStatus();
+
+                if (_sentral.gotGyrometer()) {
+
+                    float gx, gy, gz;
+
+                    // Returns degrees / sec
+                    _sentral.readGyrometer(gx, gy, gz);
+
+                    // Convert degrees / sec to radians / sec
+                    gyro[0] = radians(gx);
+                    gyro[1] = radians(gy);
+                    gyro[2] = radians(gz);
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            bool getQuaternion(float quat[4])
+            {
+                if (_sentral.gotQuaternion()) {
+
+                    static float qw, qx, qy, qz;
+
+                    _sentral.readQuaternion(qw, qx, qy, qz);
+
+                    quat[0] = qw;
+                    quat[1] = qx;
+                    quat[2] = qy;
+                    quat[3] = qz;
+
+                    return true;
+                }
+
+                return false;
+            }
+
+        public:
+
+            // Support prototype version where LED is on pin A1
+            Ladybug(uint8_t ledPin = A4) 
+            {
+                _led_pin = ledPin;
+
+                // Begin serial comms
+                Serial.begin(115200);
+
+                // Setup LEDs and turn them off
+                pinMode(_led_pin, OUTPUT);
+                digitalWrite(_led_pin, LOW);
+
+                // Start I^2C
+                Wire.begin();
+
+                // Hang a bit before starting up the EM7180
+                delay(100);
+
+                // Start the EM7180 in master mode, no interrupt
+                if (!_sentral.begin()) {
+                    while (true) {
+                        Serial.println(_sentral.getErrorString());
+                    }
+                }
+
+                // Initialize the motors
+                for (int k=0; k<4; ++k) {
+                    analogWriteFrequency(MOTOR_PINS[k], 10000);  
+                    analogWrite(MOTOR_PINS[k], 0);  
+                }
+
+                // Hang a bit more
+                delay(100);
+
+                // Do general real-board initialization
+                RealBoard::init();
+            }
+
+    }; // class Ladybug
+
+    void Board::outbuf(char * buf)
+    {
+        Serial.print(buf);
+    }
+
+} // namespace hf
+realboard.hpp/  0           0     0     644     2974      `
+/*
+   realboard.hpp : Board subclass for real (hardware) boards
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "board.hpp"
+#include "debug.hpp"
+#include "datatypes.hpp"
+
+namespace hf {
+
+    class RealBoard : public Board {
+
+        private:
+
+            static constexpr float   LED_STARTUP_FLASH_SECONDS = 1.0;
+            static constexpr uint8_t LED_STARTUP_FLASH_COUNT   = 20;
+            static constexpr float   LED_SLOWFLASH_SECONDS     = 0.25;
+
+            bool _shouldflash;
+
+        protected:
+
+            virtual uint32_t getMicroseconds(void) = 0;
+            virtual void     delaySeconds(float time) = 0;
+            virtual void     setLed(bool isOn) = 0;
+
+            void init(void)
+            {
+                // Flash LED
+                float pauseSeconds = LED_STARTUP_FLASH_SECONDS / LED_STARTUP_FLASH_COUNT;
+                setLed(false);
+                for (uint8_t i = 0; i < LED_STARTUP_FLASH_COUNT; i++) {
+                    setLed(true);
+                    delaySeconds(pauseSeconds);
+                    setLed(false);
+                    delaySeconds(pauseSeconds);
+                }
+                setLed(false);
+
+                _shouldflash = false;
+            }
+
+            float getTime(void)
+            {
+                return getMicroseconds() / 1.e6f;
+            }
+
+            void showArmedStatus(bool armed)
+            {
+                // Set LED to indicate armed
+                if (!_shouldflash) {
+                    setLed(armed);
+                }
+            }
+
+            void flashLed(bool shouldflash)
+            {
+                if (shouldflash) {
+
+                    static float _time;
+                    static bool state;
+
+                    float time = getTime();
+
+                    if (time-_time > LED_SLOWFLASH_SECONDS) {
+                        state = !state;
+                        setLed(state);
+                        _time = time;
+                    }
+                }
+
+                _shouldflash = shouldflash;
+            }
+
+            void error(const char * errmsg) 
+            {
+                while (true) {
+                    Debug::printf("%s\n", errmsg);
+                    delaySeconds(0.1);
+                }
+            }
+
+ 
+    }; // class RealBoard
+
+} // namespace hf
+softquat.hpp/   0           0     0     644     3935      `
+/*
+   sofquat.hpp : Abstract class for boards that need to compute the quaternion on the MCU
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "filters.hpp"
+#include "realboard.hpp"
+
+#include <math.h>
+
+namespace hf {
+
+    class SoftwareQuaternionBoard : public RealBoard {
+
+        private:
+
+            // Global constants for 6 DoF quaternion filter
+            const float GYRO_MEAS_ERROR = M_PI * (40.0f / 180.0f);
+            const float GYRO_MEAS_DRIFT = M_PI * (0.0f  / 180.0f);
+            const float BETA = sqrtf(3.0f / 4.0f) * GYRO_MEAS_ERROR; 
+            const float ZETA = sqrt(3.0f / 4.0f) * GYRO_MEAS_DRIFT;  
+
+            // Update quaternion after this number of gyro updates
+            const uint8_t QUATERNION_DIVISOR = 5;
+
+            // Supports computing quaternion after a certain number of IMU readings
+            uint8_t _quatCycleCount = 0;
+
+            // Built into Arduino, but not other platforms 
+            static float deg2rad(float degrees) 
+            {
+                return M_PI * degrees / 180;
+            }
+
+        protected:
+
+            float _ax = 0;
+            float _ay = 0;
+            float _az = 0;
+            float _gx = 0;
+            float _gy = 0;
+            float _gz = 0;
+
+            // Quaternion support: even though MPU9250 has a magnetometer, we keep it simple for now by 
+            // using a 6DOF fiter (accel, gyro)
+            MadgwickQuaternionFilter6DOF _quaternionFilter = MadgwickQuaternionFilter6DOF(BETA, ZETA);
+
+            bool getGyrometer(float gyro[3])
+            {
+                // Read acceleromter Gs, gyrometer degrees/sec
+                if (imuRead()) {
+
+                    // Convert gyrometer values from degrees/sec to radians/sec
+                    _gx = deg2rad(_gx);
+                    _gy = deg2rad(_gy);
+                    _gz = deg2rad(_gz);
+
+                    // Store output
+                    gyro[0] = _gx;
+                    gyro[1] = _gy;
+                    gyro[2] = _gz;
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            bool getQuaternion(float quat[4])
+            {
+                // Update quaternion after some number of IMU readings
+                _quatCycleCount = (_quatCycleCount + 1) % QUATERNION_DIVISOR;
+
+                if (_quatCycleCount == 0) {
+
+                    // Set integration time by time elapsed since last filter update
+                    static float _time;
+                    float time = getTime();
+                    float deltat = time - _time;
+                    _time = time;
+
+                    // Run the quaternion on the IMU values acquired in imuRead()                   
+                    _quaternionFilter.update(_ax, _ay, _az, _gx, _gy, _gz, deltat); 
+
+                    // Copy the quaternion back out
+                    quat[0] = _quaternionFilter.q1;
+                    quat[1] = _quaternionFilter.q2;
+                    quat[2] = _quaternionFilter.q3;
+                    quat[3] = _quaternionFilter.q4;
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            virtual bool imuRead(void) = 0;
+
+    }; // class SoftwareQuaternionBoard
+
+} // namespace hf
+
+bonadrone.hpp/  0           0     0     644     5929      `
+/*
+   bonadrone.hpp : Implementation of Hackflight Board routines for Bonadrone Flight Controller
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <Wire.h>
+
+#include <LSM6DSM.h> 
+
+#include "filters.hpp"
+#include "hackflight.hpp"
+#include "softquat.hpp"
+
+namespace hf {
+
+    // Interrupt support 
+
+    static bool gotNewAccelGyroData;
+    static void lsm6dsmInterruptHandler()
+    {
+        gotNewAccelGyroData = true;
+    }
+
+    class Bonadrone : public SoftwareQuaternionBoard {
+
+        private:
+
+            const uint8_t LED_PIN = 38;
+
+            // LSM6DSM data-ready interrupt pin
+            const uint8_t LSM6DSM_INTERRUPT_PIN = 2;
+
+            const uint8_t MOTOR_PINS[4] = {3, 4, 5, 6};
+            
+            // Min, max PWM values
+            const uint16_t PWM_MIN = 1000;
+            const uint16_t PWM_MAX = 2000;
+            
+            // Paramters to experiment with ------------------------------------------------------------------------
+
+            // LSM6DSM full-scale settings
+            static const LSM6DSM::Ascale_t Ascale = LSM6DSM::AFS_2G;
+            static const LSM6DSM::Gscale_t Gscale = LSM6DSM::GFS_245DPS;
+            static const LSM6DSM::Rate_t   AODR   = LSM6DSM::ODR_833Hz;
+            static const LSM6DSM::Rate_t   GODR   = LSM6DSM::ODR_833Hz;
+
+            // Biases computed by Simon using Juan & Pep's LSM6DSM/Examples/Calibrate sketch
+            float ACCEL_BIAS[3] = {-0.020306,0.008926,0.029526};
+            float GYRO_BIAS[3]  = {0.301350,-0.818594,-0.701652};
+
+
+            // Instance variables -----------------------------------------------------------------------------------
+
+            LSM6DSM _lsm6dsm = LSM6DSM(Ascale, Gscale, AODR, GODR, ACCEL_BIAS, GYRO_BIAS);
+
+            // Helpers
+
+            void i2cerror(const char * devicename)
+            {
+                while (true) {
+                    Serial.print("Unable to start: ");
+                    Serial.println(devicename);
+                }
+            }
+
+        protected:
+
+            void delayMilliseconds(uint32_t msec)
+            {
+                delay(msec);
+            }
+
+            void setLed(bool isOn)
+            { 
+                digitalWrite(LED_PIN, isOn ? LOW : HIGH);
+            }
+
+            uint8_t serialAvailableBytes(void)
+            {
+                return Serial.available();
+            }
+
+            uint8_t serialReadByte(void)
+            {
+                return Serial.read();
+            }
+
+            void serialWriteByte(uint8_t c)
+            {
+                Serial.write(c);
+            }
+
+            void writeMotor(uint8_t index, float value)
+            {
+                analogWrite(MOTOR_PINS[index], (uint16_t)(PWM_MIN+value*(PWM_MAX-PWM_MIN)) >> 3);
+            }
+
+            virtual uint32_t getMicroseconds(void) override
+            {
+                return micros();
+            }
+
+            void delaySeconds(float sec)
+            {
+                delay((uint32_t)(1000*sec));
+            }
+
+            bool imuRead(void)
+            {
+                if (gotNewAccelGyroData) {
+
+                    gotNewAccelGyroData = false;
+
+                    _lsm6dsm.readData(_ax, _ay, _az, _gx, _gy, _gz);
+
+                    // Negate to support board orientation
+                    _ax = -_ax;
+                    _gy = -_gy;
+                    _gz = -_gz;
+
+                    return true;
+
+                } 
+
+                return false;
+            }
+
+        public:
+
+            Bonadrone(void)
+            {
+                // Begin serial comms
+                Serial.begin(115200);
+
+                // Setup LED pin and turn it off
+                pinMode(LED_PIN, OUTPUT);
+                digitalWrite(LED_PIN, HIGH);
+
+                // Configure interrupt
+                pinMode(LSM6DSM_INTERRUPT_PIN, INPUT);
+
+                // Connect to the ESCs and send them the baseline values
+                for (uint8_t k=0; k<4; ++k) {
+                  pinMode(MOTOR_PINS[k], OUTPUT);
+                  analogWrite(MOTOR_PINS[k], PWM_MIN>>3);
+                }
+
+                // Start I^2C
+                Wire.begin(TWI_PINS_20_21);
+                Wire.setClock(400000); // I2C frequency at 400 kHz  
+                delay(100);
+
+                // Start the LSM6DSM
+                switch (_lsm6dsm.begin()) {
+
+                    case LSM6DSM::ERROR_CONNECT:
+                        i2cerror("no connection");
+                        break;
+
+                    case LSM6DSM::ERROR_ID:
+                        i2cerror("bad ID");
+                        break;
+
+                    case LSM6DSM::ERROR_SELFTEST:
+                        //i2cerror("failed self-test");
+                        break;
+
+                    case LSM6DSM::ERROR_NONE:
+                        break;
+
+                }
+
+                delay(100);
+
+                attachInterrupt(LSM6DSM_INTERRUPT_PIN, lsm6dsmInterruptHandler, RISING);  
+
+                // Clear the interrupt
+                _lsm6dsm.clearInterrupt();
+
+                // Do general real-board initialization
+                RealBoard::init();
+            }
+
+
+    }; // class Bonadrone
+
+    void Board::outbuf(char * buf)
+    {
+        Serial.print(buf);
+    }
+
+} // namespace hf
+
+superfly.hpp/   0           0     0     644     5239      `
+/*
+   superfly.hpp : Superfly Hackable ESP8266 Flight Controller implementation of Hackflight Board routines
+
+   Uses EM7180 SENtral Sensor Hub in master mode mode
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <Wire.h>
+#include <EM7180_Master.h>
+#include <stdarg.h>
+#include "hackflight.hpp"
+#include "realboard.hpp"
+
+namespace hf {
+
+    class SuperFly : public RealBoard {
+
+        private:
+
+            // Tunable EM7180 parameters
+            static const uint8_t  MAG_RATE       = 100;  // Hz
+            static const uint16_t ACCEL_RATE     = 330;  // Hz
+            static const uint16_t GYRO_RATE      = 330;  // Hz
+            static const uint8_t  BARO_RATE      = 50;   // Hz
+            static const uint8_t  Q_RATE_DIVISOR = 5;    // 1/5 gyro rate
+
+            static const uint8_t LED_PIN = 15;
+
+            const uint8_t MOTOR_PINS[4] = {4, 5, 12, 14};
+
+            EM7180_Master _sentral = EM7180_Master(MAG_RATE, ACCEL_RATE, GYRO_RATE, BARO_RATE, Q_RATE_DIVISOR);
+
+            void checkEventStatus(void)
+            {
+                _sentral.checkEventStatus();
+
+                if (_sentral.gotError()) {
+                    while (true) {
+                        Serial.print("ERROR: ");
+                        Serial.println(_sentral.getErrorString());
+                    }
+                }
+            }
+
+            void delaySeconds(float sec)
+            {
+                delay((uint32_t)(1000*sec));
+            }
+
+            void setLed(bool isOn)
+            { 
+                digitalWrite(LED_PIN, isOn ? HIGH : LOW);
+            }
+
+            uint8_t serialAvailableBytes(void)
+            {
+                return Serial.available();
+            }
+
+            uint8_t serialReadByte(void)
+            {
+                return Serial.read();
+            }
+
+            void serialWriteByte(uint8_t c)
+            {
+                Serial.write(c);
+            }
+
+            virtual uint32_t getMicroseconds(void) override
+            {
+                return micros();
+            }
+
+            void writeMotor(uint8_t index, float value)
+            {
+                // Scale motor value from [0,1] to [0,255]
+                analogWrite(MOTOR_PINS[index], (uint16_t)(value * 1023));
+            }
+
+            bool getGyrometer(float gyro[3])
+            {
+                // Since gyro is updated most frequently, use it to drive SENtral polling
+                checkEventStatus();
+
+                if (_sentral.gotGyrometer()) {
+
+                    float gx, gy, gz;
+
+                    // Returns degrees / sec
+                    _sentral.readGyrometer(gx, gy, gz);
+
+                    // Convert degrees / sec to radians / sec
+                    gyro[0] = radians(gx);
+                    gyro[1] = radians(gy);
+                    gyro[2] = radians(gz);
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            bool getQuaternion(float quat[4])
+            {
+                if (_sentral.gotQuaternion()) {
+
+                    static float qw, qx, qy, qz;
+
+                    _sentral.readQuaternion(qw, qx, qy, qz);
+
+                    quat[0] = qw;
+                    quat[1] = qx;
+                    quat[2] = qy;
+                    quat[3] = qz;
+
+                    return true;
+                }
+
+                return false;
+            }
+
+        public:
+
+            SuperFly(void)
+            {
+                // Begin serial comms
+                Serial.begin(115200);
+
+                // Setup LEDs and turn them off
+                pinMode(LED_PIN, OUTPUT);
+                digitalWrite(LED_PIN, LOW);
+
+                // Start I^2C
+                Wire.begin(0,2); // SDA (0), SCL (2) on ESP8266
+
+                // Hang a bit before starting up the EM7180
+                delay(100);
+
+                // Start the EM7180 in master mode, no interrupt
+                if (!_sentral.begin()) {
+                    while (true) {
+                        Serial.println(_sentral.getErrorString());
+                    }
+                }
+
+                // Initialize the motors
+                analogWriteFreq(200);  
+                for (int k=0; k<4; ++k) {
+                    analogWrite(MOTOR_PINS[k], 0);  
+                }
+
+                // Hang a bit more
+                delay(100);
+
+                // Do general real-board initialization
+                RealBoard::init();
+            }
+
+    }; // class SuperFly
+
+    void Board::outbuf(char * buf)
+    {
+        Serial.print(buf);
+    }
+
+} // namespace hf
+
+/0              0           0     0     644     1820      `
+/*
+   accelerometer.hpp : Support for accelerometer
+
+   Hackflight requires your Board implementation to provide the
+   quaternion directly, but access to accelerometer could be useful
+   for other kinds of sensor fusion (altitude hold).
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <cmath>
+#include <math.h>
+
+#include "debug.hpp"
+#include "sensor.hpp"
+#include "surfacemount.hpp"
+#include "board.hpp"
+
+namespace hf {
+
+    class Accelerometer : public SurfaceMountSensor {
+
+        friend class Hackflight;
+
+        public:
+
+            Accelerometer(void)
+            {
+                memset(_gs, 0, 3*sizeof(float));
+            }
+
+        protected:
+
+            virtual void modifyState(state_t & state, float time) override
+            {
+                // Here is where you'd do sensor fusion
+                (void)state;
+                (void)time;
+            }
+
+            virtual bool ready(float time) override
+            {
+                (void)time;
+
+                return board->getAccelerometer(_gs);
+            }
+
+        private:
+
+            float _gs[3];
+
+    };  // class Accelerometer
+
+} // namespace
+/19             0           0     0     644     1811      `
+/*
+   magnetometer.hpp : Support for magnetometer (compass)
+
+   Hackflight requires your Board implementation to provide the
+   quaternion directly, but access to magnetometer could be useful
+   for other kinds of sensor fusion. 
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <cmath>
+#include <math.h>
+
+#include "debug.hpp"
+#include "sensor.hpp"
+#include "surfacemount.hpp"
+#include "board.hpp"
+
+namespace hf {
+
+    class Magnetometer : public SurfaceMountSensor {
+
+        friend class Hackflight;
+
+        public:
+
+            Magnetometer(void)
+            {
+                memset(_uTs, 0, 3*sizeof(float));
+            }
+
+        protected:
+
+            virtual void modifyState(state_t & state, float time) override
+            {
+                // Here is where you'd do sensor fusion
+                (void)state;
+                (void)time;
+            }
+
+            virtual bool ready(float time) override
+            {
+                (void)time;
+
+                return board->getMagnetometer(_uTs);
+            }
+
+        private:
+
+            float _uTs[3];
+
+    };  // class Magnetometer
+
+} // namespace
+
+gyrometer.hpp/  0           0     0     644     1835      `
+/*
+   gyrometer.hpp : Support for gyrometer (a.k.a. gyroscope) 
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <cmath>
+#include <math.h>
+
+#include "debug.hpp"
+#include "sensor.hpp"
+#include "surfacemount.hpp"
+#include "board.hpp"
+
+namespace hf {
+
+    class Gyrometer : public SurfaceMountSensor {
+
+        friend class Hackflight;
+
+        public:
+
+            Gyrometer(void)
+            {
+                memset(_rates, 0, 3*sizeof(float));
+            }
+
+        protected:
+
+            virtual void modifyState(state_t & state, float time) override
+            {
+                (void)time;
+
+                // NB: We negate gyro X, Y to simplify PID controller
+                state.angularVelocities[0] =  _rates[0];
+                state.angularVelocities[1] = -_rates[1];
+                state.angularVelocities[2] = -_rates[2];
+            }
+
+            virtual bool ready(float time) override
+            {
+                (void)time;
+
+                bool result = board->getGyrometer(_rates);
+
+                return result;
+            }
+
+        private:
+
+            float _rates[3];
+
+    };  // class Gyrometer
+
+} // namespace
+
+barometer.hpp/  0           0     0     644     1640      `
+/*
+   barometer.hpp : Support for surface-mounted barometer
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <cmath>
+#include <math.h>
+
+#include "debug.hpp"
+#include "sensor.hpp"
+#include "surfacemount.hpp"
+#include "board.hpp"
+
+namespace hf {
+
+    class Barometer : public SurfaceMountSensor {
+
+        friend class Hackflight;
+
+        public:
+
+            Barometer(void)
+            {
+                _pressure = 0;
+            }
+
+        protected:
+
+            virtual void modifyState(state_t & state, float time) override
+            {
+                // Here is where you'd do sensor fusion
+                (void)state;
+                (void)time;
+            }
+
+            virtual bool ready(float time) override
+            {
+                (void)time;
+
+                return board->getBarometer(_pressure);
+            }
+
+        private:
+
+            // pascals
+            float _pressure;
+
+    };  // class Barometer
+
+} // namespace
+quaternion.hpp/ 0           0     0     644     2507      `
+/*
+   quaternion.hpp : Support for treating quaternion as a sensor
+   
+   Supports IMUs like EM7180 SENtral Sensor Fusion solution, where 
+   quaternion is computed in hardware, and simulation platforms like
+   UE4, where quaternion is provided by physics engine. For other IMUs 
+   and simulators, you can use quaternion-filter classes in filters.hpp.
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <cmath>
+#include <math.h>
+
+#include "sensor.hpp"
+#include "surfacemount.hpp"
+#include "board.hpp"
+
+namespace hf {
+
+    class Quaternion : public SurfaceMountSensor {
+
+        friend class Hackflight;
+
+        public:
+
+            // We make this public so we can use it in different sketches
+            static void computeEulerAngles(float q[4], float euler[3])
+            {
+                euler[0] = atan2(2.0f*(q[0]*q[1]+q[2]*q[3]),q[0]*q[0]-q[1]*q[1]-q[2]*q[2]+q[3]*q[3]);
+                euler[1] =  asin(2.0f*(q[1]*q[3]-q[0]*q[2]));
+                euler[2] = atan2(2.0f*(q[1]*q[2]+q[0]*q[3]),q[0]*q[0]+q[1]*q[1]-q[2]*q[2]-q[3]*q[3]);
+            }
+
+        protected:
+
+            Quaternion(void)
+            {
+                memset(_quat, 0, 4*sizeof(float));
+            }
+
+            virtual void modifyState(state_t & state, float time) override
+            {
+                (void)time;
+
+                computeEulerAngles(_quat, state.eulerAngles);
+
+                // Convert heading from [-pi,+pi] to [0,2*pi]
+                if (state.eulerAngles[2] < 0) {
+                    state.eulerAngles[2] += 2*M_PI;
+                }
+            }
+
+            virtual bool ready(float time) override
+            {
+                (void)time;
+
+                return board->getQuaternion(_quat);
+            }
+
+        private:
+
+            float _quat[4];
+
+    };  // class Quaternion
+
+} // namespace
+
+/37             0           0     0     644     1059      `
+/*
+   surfacemount.hpp : Abstract class for surface-mounted sensors (IMU, barometer)
+
+   Copyright (c) 2018 Simon D. Levy
+   
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "sensor.hpp"
+#include "board.hpp"
+
+namespace hf {
+
+    class SurfaceMountSensor : public Sensor {
+
+        friend class Hackflight;
+
+        protected:
+
+            Board * board;
+
+    };  // class SurfaceMountSensor
+
+} // namespace
+
+opticalflow.hpp/0           0     0     644     1571      `
+/*
+   opticalflow.hpp : Support for optical-flow sensors
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <cmath>
+#include <math.h>
+
+#include "debug.hpp"
+#include "peripheral.hpp"
+
+namespace hf {
+
+    class OpticalFlow : public PeripheralSensor {
+
+        private:
+
+            float _flow[2];
+
+        protected:
+
+            virtual void modifyState(state_t & state, float time) override
+            {
+                (void)time; // XXX ignore time for now
+
+                state.velocityForward   = _flow[0];
+                state.velocityRightward = _flow[1];
+            }
+
+            virtual bool ready(float time) override
+            {
+                (void)time;
+
+                getFlow(_flow);
+
+                return true; // XXX ignore readiness for now
+            }
+
+            virtual void getFlow(float flow[2]) = 0;
+
+    };  // class OpticalFlow
+
+} // namespace
+
+rangefinder.hpp/0           0     0     644     2667      `
+/*
+   rangefinder.hpp : Support for rangefinder sensors (sonar, time-of-flight)
+
+   Copyright (c) 2018 Simon D. Levy
+
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <cmath>
+#include <math.h>
+
+#include "debug.hpp"
+#include "peripheral.hpp"
+#include "filters.hpp"
+
+namespace hf {
+
+    class Rangefinder : public PeripheralSensor {
+
+        public:
+
+            Rangefinder(void) 
+            {
+                _lpf.init();
+            }
+
+        protected:
+
+            virtual void modifyState(state_t & state, float time) override
+            {
+                // Previous values to support first-differencing
+                static float _time;
+                static float _altitude;
+
+                // Compensate for effect of pitch, roll on rangefinder reading
+                state.altitude =  _distance * cos(state.eulerAngles[0]) * cos(state.eulerAngles[1]);
+
+                // Use first-differenced, low-pass-filtered altitude as variometer
+                state.variometer = _lpf.update((state.altitude-_altitude) / (time-_time));
+
+                // Update first-difference values
+                _time = time;
+                _altitude = state.altitude;
+            }
+
+            virtual bool ready(float time) override
+            {
+                float newDistance;
+
+                if (distanceAvailable(newDistance)) {
+
+                    static float _time;
+
+                    if (time-_time > UPDATE_PERIOD) {
+
+                        _distance = newDistance;
+
+                        _time = time; 
+
+                        return true;
+                    }
+                }
+
+                return false; 
+            }
+
+
+            virtual bool distanceAvailable(float & distance) = 0;
+
+        private:
+
+            static constexpr float UPDATE_HZ = 25; // XXX should be using interrupt!
+
+            static constexpr float UPDATE_PERIOD = 1/UPDATE_HZ;
+
+            float _distance;
+
+            LowPassFilter _lpf = LowPassFilter(20);
+
+    };  // class Rangefinder
+
+} // namespace
+
+peripheral.hpp/ 0           0     0     644     977       `
+/*
+   peripheral.hpp : Abstract class for peripheral sensors (rangefinder, optical flow)
+
+   Copyright (c) 2018 Simon D. Levy
+   
+   This file is part of Hackflight.
+
+   Hackflight is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Hackflight is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with Hackflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "sensor.hpp"
+#include "board.hpp"
+
+namespace hf {
+
+    class PeripheralSensor : public Sensor {
+
+    };  // class PeripheralSensor
+
+} // namespace
+
