@@ -63,7 +63,7 @@ class IMU{
 
     float * read()
     {
-         static float values[9];
+        static float values[9];
         
         sensor->update();
         sensor->read_accelerometer(&values[0], &values[1], &values[2]);
