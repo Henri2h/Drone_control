@@ -20,79 +20,85 @@ sudo ./Servo
 
 #include <ctime>
 #include <chrono>
-#include <math.h> 
-
+#include <math.h>
 
 #include "RCInputManager.cpp"
 #include "ServoManager.cpp"
 #include "IMU.cpp"
 #include "IMU_data_processing.cpp"
 #include "PID.cpp"
-
-
+#include "LED.cpp"
 
 using namespace std;
 int i = 0;
-string version = "0.0.3";
+string version = "0.0.4";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
 IMU imu = IMU();
 IMU_data_processing imu_data_proc = IMU_data_processing();
 PID pid = PID();
+LED led = Led();
 
 auto last = chrono::steady_clock::now();
 auto dt_last = chrono::steady_clock::now();
 float ang[3] = {0, 0, 0};
 
-void setup(){
-    cout << "[ MAIN ] : "  << version << "\n";
+void setup()
+{
+    LED.setKO();
+    cout << "[ MAIN ] : " << version << "\n";
     printf("[ MAIN ] : Setup \n");
     servo.initialize();
 
+
     if (getuid())
-        {
-            printf("Not root. Please launch with root permission: sudo \n");
-            throw "Not root";
-        }
+    {
+        printf("Not root. Please launch with root permission: sudo \n");
+        throw "Not root";
+    }
+    LED.setOK();
 }
 
-void loop(){
+void loop()
+{
     auto now = chrono::steady_clock::now();
-    float diff_nano = chrono::duration <double, nano> (now - dt_last).count();
+    float diff_nano = chrono::duration<double, nano>(now - dt_last).count();
     dt_last = now;
 
-    float dt = (diff_nano * pow(10, -9.0))  ;
+    float dt = (diff_nano * pow(10, -9.0));
     int e = rc.read();
     auto imu_read = imu.read();
     imu_data_proc.getComplementar(ang, imu_read, dt);
-    float * accPos = imu_data_proc.getAngleAccel(imu_read);
+    float *accPos = imu_data_proc.getAngleAccel(imu_read);
 
     cout << "Accelerometer : ";
-    for(size_t i = 0; i < 3; i++)
+    for (size_t i = 0; i < 3; i++)
     {
         cout << accPos[i] << ", ";
     }
     cout << "\n";
 
     cout << "gyr : ";
-    for(size_t i = 0; i < 3; i++)
+    for (size_t i = 0; i < 3; i++)
     {
         cout << ang[i] << ", ";
     }
     cout << "\n";
-    
+
     servo.setDuty(e);
     i++;
-    
+
     // loop control
     int r = 900;
-    if(i%r == 0){
+    if (i % r == 0)
+    {
         auto now = chrono::steady_clock::now();
-        float diff = chrono::duration <double, nano> (now - last).count();
+        float diff = chrono::duration<double, nano>(now - last).count();
 
-        float f = r / (diff * pow(10, -9.0))  ;
-        cout << "f : " << f << "Hz "<< "\n";
+        float f = r / (diff * pow(10, -9.0));
+        cout << "f : " << f << "Hz "
+             << "\n";
         cout << i << " : " << e << "\n";
         last = now;
     }
@@ -104,9 +110,8 @@ int main(int argc, char *argv[])
     setup();
 
     // loop
-    while(true){
+    while (true)
+    {
         loop();
     }
-     
 }
-
