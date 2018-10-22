@@ -24,7 +24,7 @@ sudo ./Servo
 #define SERVO_MIN 1250 /*mS*/
 #define SERVO_MAX 1750 /*mS*/
 
-#define PWM_OUTPUT 3
+#define PWM_OUTPUT 2
 
 
 using namespace Navio;
@@ -55,6 +55,7 @@ class ServoManager {
             }*/
             if (getuid()) {
                 fprintf(stderr, "Not root. Please launch like this: sudo \n");
+                throw "Not root!";
             }
 
 
