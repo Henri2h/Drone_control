@@ -28,8 +28,12 @@ sudo ./Servo
 #include "IMU_data_processing.cpp"
 #include "PID.cpp"
 #include "LEDManager.cpp"
+#include "Remote.cpp"
 
 using namespace std;
+
+typedef std::chrono::high_resolution_clock TimeM;
+
 int i = 0;
 string version = "0.0.4";
 
@@ -39,30 +43,47 @@ IMU imu = IMU();
 IMU_data_processing imu_data_proc = IMU_data_processing();
 PID pid = PID();
 LEDManager led = LEDManager();
+Remote remote = Remote();
 
-auto last = chrono::steady_clock::now();
-auto dt_last = chrono::steady_clock::now();
+auto time_start = TimeM::now();
+
+
+auto last = TimeM::now();
+auto dt_last = TimeM::now();
+float t = 0; // time
 float ang[3] = {0, 0, 0};
 
 void setup()
 {
     led.setKO();
-    cout << "[ MAIN ] : " << version << "\n";
-    printf("[ MAIN ] : Setup \n");
-    servo.initialize();
 
+    // check if root
     if (getuid())
     {
         printf("Not root. Please launch with root permission: sudo \n");
         throw "Not root";
     }
+
+    cout << "[ MAIN ] : " << version << "\n";
+    printf("[ MAIN ] : Setup \n");
+    servo.initialize();
+
+    // launch remote
+
+    remote.launch(ang, &t);
+
     led.setOK();
 }
 
 void loop()
 {
-    auto now = chrono::steady_clock::now();
-    float diff_nano = chrono::duration<double, nano>(now - dt_last).count();
+    auto now = TimeM::now();
+    double now_n = chrono::duration<double, nano>(now - time_start).count();
+    t = now_n * pow(10, -9.0);
+    cout << "t : " << t << "s\n";
+    sleep(1);
+    
+    double diff_nano = chrono::duration<double, nano>(now - dt_last).count();
     dt_last = now;
 
     float dt = (diff_nano * pow(10, -9.0));
@@ -92,7 +113,7 @@ void loop()
     int r = 900;
     if (i % r == 0)
     {
-        auto now = chrono::steady_clock::now();
+        auto now = TimeM::now();
         float diff = chrono::duration<double, nano>(now - last).count();
 
         float f = r / (diff * pow(10, -9.0));
