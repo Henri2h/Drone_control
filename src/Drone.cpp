@@ -27,7 +27,7 @@ sudo ./Servo
 #include "IMU.cpp"
 #include "IMU_data_processing.cpp"
 #include "PID.cpp"
-#include "LED.cpp"
+#include "LEDManager.cpp"
 
 using namespace std;
 int i = 0;
@@ -38,7 +38,7 @@ ServoManager servo = ServoManager();
 IMU imu = IMU();
 IMU_data_processing imu_data_proc = IMU_data_processing();
 PID pid = PID();
-LED led = Led();
+LEDManager led = LEDManager();
 
 auto last = chrono::steady_clock::now();
 auto dt_last = chrono::steady_clock::now();
@@ -46,18 +46,17 @@ float ang[3] = {0, 0, 0};
 
 void setup()
 {
-    LED.setKO();
+    led.setKO();
     cout << "[ MAIN ] : " << version << "\n";
     printf("[ MAIN ] : Setup \n");
     servo.initialize();
-
 
     if (getuid())
     {
         printf("Not root. Please launch with root permission: sudo \n");
         throw "Not root";
     }
-    LED.setOK();
+    led.setOK();
 }
 
 void loop()
