@@ -29,9 +29,11 @@ sudo ./Servo
 #include "IMU_data_processing.cpp"
 #include "PID.cpp"
 
+
+
 using namespace std;
 int i = 0;
-string version = "0.0.2";
+string version = "0.0.3";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
@@ -47,6 +49,12 @@ void setup(){
     cout << "[ MAIN ] : "  << version << "\n";
     printf("[ MAIN ] : Setup \n");
     servo.initialize();
+
+    if (getuid())
+        {
+            printf("Not root. Please launch with root permission: sudo \n");
+            throw "Not root";
+        }
 }
 
 void loop(){
