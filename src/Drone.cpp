@@ -27,16 +27,21 @@ sudo ./Servo
 #include "ServoManager.cpp"
 #include "IMU.cpp"
 #include "IMU_data_processing.cpp"
+#include "PID.cpp"
 
 using namespace std;
 int i = 0;
-string version = "beta";
+string version = "0.0.2";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
 IMU imu = IMU();
+IMU_data_processing imu_data_proc = IMU_data_processing();
+PID pid = PID();
 
 auto last = chrono::steady_clock::now();
+auto dt_last = chrono::steady_clock::now();
+float ang[3] = {0, 0, 0};
 
 void setup(){
     cout << "[ MAIN ] : "  << version << "\n";
@@ -45,8 +50,30 @@ void setup(){
 }
 
 void loop(){
+    auto now = chrono::steady_clock::now();
+    float diff_nano = chrono::duration <double, nano> (now - dt_last).count();
+    dt_last = now;
+
+    float dt = (diff_nano * pow(10, -9.0))  ;
     int e = rc.read();
-    imu.read();
+    auto imu_read = imu.read();
+    imu_data_proc.getComplementar(ang, imu_read, dt);
+    float * accPos = imu_data_proc.getAngleAccel(imu_read);
+
+    cout << "Accelerometer : ";
+    for(size_t i = 0; i < 3; i++)
+    {
+        cout << accPos[i] << ", ";
+    }
+    cout << "\n";
+
+    cout << "gyr : ";
+    for(size_t i = 0; i < 3; i++)
+    {
+        cout << ang[i] << ", ";
+    }
+    cout << "\n";
+    
     servo.setDuty(e);
     i++;
     
@@ -57,16 +84,18 @@ void loop(){
         float diff = chrono::duration <double, nano> (now - last).count();
 
         float f = r / (diff * pow(10, -9.0))  ;
-        cout << "f : " << f << "Hz " << diff * pow(10, -9.0) << " ns \n";
-        cout << i << "," << e << "\n";
+        cout << "f : " << f << "Hz "<< "\n";
+        cout << i << " : " << e << "\n";
         last = now;
     }
 }
 
 int main(int argc, char *argv[])
 {
-    printf("Starting ...\n");
+    float frequency = 900; //Hz
     setup();
+
+    // loop
     while(true){
         loop();
     }
