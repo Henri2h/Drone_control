@@ -43,6 +43,11 @@ sudo ./Servo
 #define pos_x 0
 #define pos_y 1
 #define pos_z 2
+
+#define pid_pitch 1
+#define pid_roll 0
+#define pid_yaw 2
+
 #define g 9.81
 
 using namespace std;
@@ -50,7 +55,7 @@ using namespace std;
 typedef std::chrono::high_resolution_clock TimeM;
 
 int i = 0;
-string version = "0.0.6";
+string version = "0.0.7";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
@@ -69,7 +74,10 @@ float ang[3] = {0, 0, 0};
 float motors[4] = {0, 0, 0, 0};
 int commands[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 int pid_out[3] = {0, 0, 0};
+int pid_debug[3] = {0, 0, 0};
 int motors_output[4] = {0, 0, 0, 0};
+int sensors[2] = {0, 0}; // pressure, temperature
+int frequency_crtl[] = {0, 0};
 
 bool isArmed = false;
 bool isArming = false;
@@ -77,7 +85,7 @@ bool isArming = false;
 auto arming_t_started = TimeM::now();
 void safety()
 {
-//cout << "throttle : " << commands[cmd_throttle] << " arming : " << commands[cmd_arming] <<  "\n"; 
+    //cout << "throttle : " << commands[cmd_throttle] << " arming : " << commands[cmd_arming] <<  "\n";
     if (commands[cmd_throttle] < 1100) // evaluation must be done at 0 throttle !!!!
     {
         if (commands[cmd_arming] > 1500)
@@ -118,7 +126,7 @@ void setup()
         throw "Not root";
     }
 
-    if (check_apm())
+    if (check_apm()) // check if apm (ardupilot) is running
     {
         cout << "APM is running ... could not run";
         throw "APM running";
@@ -130,7 +138,7 @@ void setup()
 
     // launch remote
 
-    remote.launch(ang, &t);
+    remote.launch(ang, pid_out, pid_debug, sensors, &t);
 
     led.setOK();
 }
@@ -176,8 +184,10 @@ void loop()
         }
         cout << "\n";
     }
+    pid.setK(commands[cmd_kp], commands[cmd_kd], commands[cmd_ki]);
     // pid
-    pid.getPID(pid_out, commands, ang, t);
+    int cmd[3] = {commands[cmd_roll], commands[cmd_pitch], commands[cmd_yaw]};
+    pid.getPID(pid_out, pid_debug, cmd, ang, dt);
     // motor commands
     /*
     self.esc.v0 = ui.throttle + pidRoll + pidPitch - pidYaw
@@ -185,12 +195,20 @@ void loop()
     self.esc.v2 = ui.throttle - pidRoll - pidPitch - pidYaw
     self.esc.v3 = ui.throttle + pidRoll - pidPitch + pidYaw
     */
-
-    motors_output[0] = commands[3] + pid_out[0] + pid_out[1] - pid_out[2];
-    motors_output[1] = commands[3] - pid_out[0] + pid_out[1] + pid_out[2];
-    motors_output[2] = commands[3] - pid_out[0] - pid_out[1] - pid_out[2];
-    motors_output[3] = commands[3] + pid_out[0] - pid_out[1] + pid_out[2];
-
+    if (isArmed && commands[cmd_throttle] > 1100)
+    {
+        motors_output[0] = commands[cmd_throttle] - pid_out[pid_roll] + pid_out[pid_pitch] - pid_out[pid_yaw];
+        motors_output[1] = commands[cmd_throttle] + pid_out[pid_roll] + pid_out[pid_pitch] + pid_out[pid_yaw];
+        motors_output[2] = commands[cmd_throttle] + pid_out[pid_roll] - pid_out[pid_pitch] - pid_out[pid_yaw];
+        motors_output[3] = commands[cmd_throttle] - pid_out[pid_roll] - pid_out[pid_pitch] + pid_out[pid_yaw];
+    }
+    else
+    {
+        motors_output[0] = 0;
+        motors_output[1] = 0;
+        motors_output[2] = 0;
+        motors_output[3] = 0;
+    }
     servo.setDuty(motors_output);
     i++;
 
@@ -209,14 +227,40 @@ void loop()
     }
 }
 
+auto last_call = TimeM::now();
+bool useTimer = true;
 int main(int argc, char *argv[])
 {
-    float frequency = 900; //Hz
+    double frequency = 900;      //Hz
+    double f_dt = 1 / frequency; //seconds
+    long long int f_dt_n = f_dt * pow(10, 9);
+    cout << f_dt_n << "\n";
     setup();
 
+    // timer variables
+    double next_call = 0;
+    last_call = TimeM::now(); // reset timmer
     // loop
     while (true)
     {
+        if (useTimer)
+        {
+            last_call += chrono::nanoseconds(f_dt_n);
+            while (pow(10, -9) * chrono::duration<double, nano>(last_call - TimeM::now()).count() > 0)
+            {
+                // micro second
+                // if error is superior to 10 micro second, reset clock
+                if (pow(10, -3) * chrono::duration<double, nano>(TimeM::now() - last_call).count() > 10)
+                {
+                    cout << "Clock reset\n";
+                    last_call = TimeM::now();
+                }
+            }
+        }
+
+        // wait that we are at beggining
+
+        // call loop
         loop();
     }
 }
