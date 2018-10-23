@@ -30,6 +30,21 @@ sudo ./Servo
 #include "LEDManager.cpp"
 #include "Remote.cpp"
 
+#define cmd_throttle 2
+#define cmd_pitch 1
+#define cmd_roll 0
+#define cmd_yaw 3
+#define cmd_arming 8
+#define flight_mode 5
+#define cmd_kp 6
+#define cmd_kd 4
+#define cmd_ki 7
+
+#define pos_x 0
+#define pos_y 1
+#define pos_z 2
+#define g 9.81
+
 using namespace std;
 
 typedef std::chrono::high_resolution_clock TimeM;
@@ -48,13 +63,49 @@ Remote remote = Remote();
 auto time_start = TimeM::now();
 
 auto last = TimeM::now();
-auto dt_last = TimeM::now();
+auto t_last = TimeM::now();
 float t = 0; // time
 float ang[3] = {0, 0, 0};
 float motors[4] = {0, 0, 0, 0};
-int commands[5] = {0, 0, 0, 0};
+int commands[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 int pid_out[3] = {0, 0, 0};
 int motors_output[4] = {0, 0, 0, 0};
+
+bool isArmed = false;
+bool isArming = false;
+
+auto arming_t_started = TimeM::now();
+void safety()
+{
+//cout << "throttle : " << commands[cmd_throttle] << " arming : " << commands[cmd_arming] <<  "\n"; 
+    if (commands[cmd_throttle] < 1100) // evaluation must be done at 0 throttle !!!!
+    {
+        if (commands[cmd_arming] > 1500)
+        {
+            double t_diff = chrono::duration<double, nano>(t_last - arming_t_started).count();
+
+            if (isArming == false) // is arming
+            {
+                cout << "ARMING\n";
+                isArming = true;
+                arming_t_started = TimeM::now();
+                led.setArming();
+            }
+            else if (isArming && t_diff * pow(10, -9) > 2 && isArmed = false)
+            {
+                cout << "ARMED\n";
+                isArmed = true;
+                led.setArmed();
+            }
+        }
+        else
+        {
+            isArmed = false;
+            isArming = false;
+            led.setOK();
+        }
+    }
+}
 
 void setup()
 {
@@ -86,16 +137,26 @@ void setup()
 
 void loop()
 {
+    // get informations
     auto now = TimeM::now();
-    double now_n = chrono::duration<double, nano>(now - time_start).count();
-    t = now_n * pow(10, -9.0);
 
-    double diff_nano = chrono::duration<double, nano>(now - dt_last).count();
-    dt_last = now;
-
-    float dt = (diff_nano * pow(10, -9.0));
     rc.read(commands);
     auto imu_read = imu.read();
+
+    // process informations
+    double now_n = chrono::duration<double, nano>(now - time_start).count();
+    double diff_nano = chrono::duration<double, nano>(now - t_last).count();
+
+    t_last = now;
+
+    // dt : convert nano to seconds
+    float dt = diff_nano * pow(10, -9.0);
+    t = now_n * pow(10, -9.0);
+
+    // safety :
+    safety();
+
+    // angles
     imu_data_proc.getComplementar(ang, imu_read, dt);
     float *accPos = imu_data_proc.getAngleAccel(imu_read);
 
