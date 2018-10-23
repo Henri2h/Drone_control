@@ -40,10 +40,10 @@ class RCInputManager
     int read(int commands[])
     {
 
-        for (size_t i = 0; i < 5; i++)
+        for (size_t i = 0; i < 9; i++)
         {
-            int period = rcin->read(i);
-            if (period == READ_FAILED)
+            commands[i] = rcin->read(i);
+            if (commands[i] == READ_FAILED)
                 return EXIT_FAILURE;
         }
 
