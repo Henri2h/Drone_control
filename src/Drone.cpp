@@ -50,7 +50,7 @@ using namespace std;
 typedef std::chrono::high_resolution_clock TimeM;
 
 int i = 0;
-string version = "0.0.5";
+string version = "0.0.6";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
@@ -91,7 +91,7 @@ void safety()
                 arming_t_started = TimeM::now();
                 led.setArming();
             }
-            else if (isArming && t_diff * pow(10, -9) > 2 && isArmed = false)
+            else if (isArming && t_diff * pow(10, -9) > 2 && isArmed == false)
             {
                 cout << "ARMED\n";
                 isArmed = true;
