@@ -85,7 +85,8 @@ class ServoManager
             int a = duty[i];
             if (a < SERVO_MIN) a = SERVO_MIN;
             if (a > SERVO_MAX) a = SERVO_MAX;
-            pwm->set_duty_cycle(i, duty[i]);
+
+            pwm->set_duty_cycle(i, a);
         }
     }
 };
