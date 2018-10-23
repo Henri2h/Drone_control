@@ -4,7 +4,7 @@ twitter.com/emlidtech || www.emlid.com || info@emlid.com
 
 Example: Control servos connected to PWM driver onboard of Navio2 shield for Raspberry Pi.
 
-Connect servo to Navio2's rc output and watch it work.
+Connect servo to Navio2's rc pid_out and watch it work.
 PWM_OUTPUT = 0 complies to channel number 1, 1 to channel number 2 and so on.
 To use full range of your servo correct SERVO_MIN and SERVO_MAX according to it's specification.
 
@@ -35,7 +35,7 @@ using namespace std;
 typedef std::chrono::high_resolution_clock TimeM;
 
 int i = 0;
-string version = "0.0.4";
+string version = "0.0.5";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
@@ -47,11 +47,14 @@ Remote remote = Remote();
 
 auto time_start = TimeM::now();
 
-
 auto last = TimeM::now();
 auto dt_last = TimeM::now();
 float t = 0; // time
 float ang[3] = {0, 0, 0};
+float motors[4] = {0, 0, 0, 0};
+int commands[5] = {0, 0, 0, 0};
+int pid_out[3] = {0, 0, 0};
+int motors_output[4] = {0, 0, 0, 0};
 
 void setup()
 {
@@ -62,6 +65,12 @@ void setup()
     {
         printf("Not root. Please launch with root permission: sudo \n");
         throw "Not root";
+    }
+
+    if (check_apm())
+    {
+        cout << "APM is running ... could not run";
+        throw "APM running";
     }
 
     cout << "[ MAIN ] : " << version << "\n";
@@ -80,46 +89,61 @@ void loop()
     auto now = TimeM::now();
     double now_n = chrono::duration<double, nano>(now - time_start).count();
     t = now_n * pow(10, -9.0);
-    cout << "t : " << t << "s\n";
-    sleep(1);
-    
+
     double diff_nano = chrono::duration<double, nano>(now - dt_last).count();
     dt_last = now;
 
     float dt = (diff_nano * pow(10, -9.0));
-    int e = rc.read();
+    rc.read(commands);
     auto imu_read = imu.read();
     imu_data_proc.getComplementar(ang, imu_read, dt);
     float *accPos = imu_data_proc.getAngleAccel(imu_read);
 
-    cout << "Accelerometer : ";
-    for (size_t i = 0; i < 3; i++)
+    if (false)
     {
-        cout << accPos[i] << ", ";
-    }
-    cout << "\n";
+        cout << "Accelerometer : ";
+        for (size_t i = 0; i < 3; i++)
+        {
+            cout << accPos[i] << ", ";
+        }
+        cout << "\n";
 
-    cout << "gyr : ";
-    for (size_t i = 0; i < 3; i++)
-    {
-        cout << ang[i] << ", ";
+        cout << "gyr : ";
+        for (size_t i = 0; i < 3; i++)
+        {
+            cout << ang[i] << ", ";
+        }
+        cout << "\n";
     }
-    cout << "\n";
+    // pid
+    pid.getPID(pid_out, commands, ang, t);
+    // motor commands
+    /*
+    self.esc.v0 = ui.throttle + pidRoll + pidPitch - pidYaw
+    self.esc.v1 = ui.throttle - pidRoll + pidPitch + pidYaw
+    self.esc.v2 = ui.throttle - pidRoll - pidPitch - pidYaw
+    self.esc.v3 = ui.throttle + pidRoll - pidPitch + pidYaw
+    */
 
-    servo.setDuty(e);
+    motors_output[0] = commands[3] + pid_out[0] + pid_out[1] - pid_out[2];
+    motors_output[1] = commands[3] - pid_out[0] + pid_out[1] + pid_out[2];
+    motors_output[2] = commands[3] - pid_out[0] - pid_out[1] - pid_out[2];
+    motors_output[3] = commands[3] + pid_out[0] - pid_out[1] + pid_out[2];
+
+    servo.setDuty(motors_output);
     i++;
 
-    // loop control
+    // display frequency
     int r = 900;
     if (i % r == 0)
     {
+
         auto now = TimeM::now();
         float diff = chrono::duration<double, nano>(now - last).count();
 
         float f = r / (diff * pow(10, -9.0));
         cout << "f : " << f << "Hz "
              << "\n";
-        cout << i << " : " << e << "\n";
         last = now;
     }
 }
