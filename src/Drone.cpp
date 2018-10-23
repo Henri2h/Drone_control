@@ -71,6 +71,7 @@ auto last = TimeM::now();
 auto t_last = TimeM::now();
 float t = 0; // time
 float ang[3] = {0, 0, 0};
+float gyrAng[3] = {0, 0, 0};
 float motors[4] = {0, 0, 0, 0};
 int commands[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 int pid_out[3] = {0, 0, 0};
@@ -165,6 +166,7 @@ void loop()
     safety();
 
     // angles
+    imu_data_proc.getGyrationAngle(gyrAng, imu_read, dt);
     imu_data_proc.getComplementar(ang, imu_read, dt);
     float *accPos = imu_data_proc.getAngleAccel(imu_read);
 
@@ -184,10 +186,24 @@ void loop()
         }
         cout << "\n";
     }
+
     pid.setK(commands[cmd_kp], commands[cmd_kd], commands[cmd_ki]);
     // pid
     int cmd[3] = {commands[cmd_roll], commands[cmd_pitch], commands[cmd_yaw]};
-    pid.getPID(pid_out, pid_debug, cmd, ang, dt);
+
+    int stabilisation_mode = 0;
+    if (stabilisation_mode == 0)
+    { // mode acro
+        // pid
+        float rates[3] = {imu_read[4], imu_read[5], imu_read[6]};
+        pid.getPID(pid_out, pid_debug, cmd, rates, dt);
+    }
+    else if (stabilisation_mode == 1)
+    { // mode angle
+        // pid
+        pid.getPID(pid_out, pid_debug, cmd, ang, dt);
+    }
+
     // motor commands
     /*
     self.esc.v0 = ui.throttle + pidRoll + pidPitch - pidYaw
