@@ -62,8 +62,7 @@ class PID
         Kp[0] = mapValue(kp, 922, 2077, 0, 4);
         Kd[0] = mapValue(kd, 922, 2077, 0, 1);
         Ki[0] = mapValue(ki, 921, 2077, 0, 1);
-        cout << "kp : " << Kp[0] << " " << Kd[0] << " " << Ki[0] << "\n";
-
+       
         //  Kp[1] = mapValue(kp, 1000, 2000, 0, 100);
         //  Kd[1] = mapValue(kd, 1000, 2000, 0, 100);
         //  Ki[1] = mapValue(ki, 1000, 2000, 0, 100);
@@ -102,5 +101,8 @@ class PID
         debug[2] = Ki[0] * error_i[0];
 
         return output;
+    }
+    void displayK(){
+         cout << "kp : " << Kp[0] << " " << Kd[0] << " " << Ki[0] << "\n";
     }
 };

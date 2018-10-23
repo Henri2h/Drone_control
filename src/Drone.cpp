@@ -224,6 +224,8 @@ void loop()
         cout << "f : " << f << "Hz "
              << "\n";
         last = now;
+
+        pid.displayK();
     }
 }
 
