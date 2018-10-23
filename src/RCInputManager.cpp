@@ -8,30 +8,28 @@
 
 #define READ_FAILED -1
 
-
-
-class RCInputManager {
-    private:
-    
-    std::unique_ptr <RCInput> get_rcin()
+class RCInputManager
+{
+  private:
+    std::unique_ptr<RCInput> get_rcin()
     {
         if (get_navio_version() == NAVIO2)
         {
-            auto ptr = std::unique_ptr <RCInput>{ new RCInput_Navio2() };
-            return ptr;
-        } else
-        {
-            auto ptr = std::unique_ptr <RCInput>{ new RCInput_Navio() };
+            auto ptr = std::unique_ptr<RCInput>{new RCInput_Navio2()};
             return ptr;
         }
-
+        else
+        {
+            auto ptr = std::unique_ptr<RCInput>{new RCInput_Navio()};
+            return ptr;
+        }
     }
-    
-    std::unique_ptr <RCInput> rcin = get_rcin();
 
-    public:
+    std::unique_ptr<RCInput> rcin = get_rcin();
 
-    RCInputManager(){
+  public:
+    RCInputManager()
+    {
         /*if (check_apm()) {
             return EXIT_FAILURE;
         }*/
@@ -39,10 +37,16 @@ class RCInputManager {
         rcin->initialize();
     }
 
-    int read(){
-        int period = rcin->read(2);
-        if (period == READ_FAILED)
-            return EXIT_FAILURE;
-        return period; 
+    int read(int commands[])
+    {
+
+        for (size_t i = 0; i < 5; i++)
+        {
+            int period = rcin->read(i);
+            if (period == READ_FAILED)
+                return EXIT_FAILURE;
+        }
+
+        return 1;
     }
 };

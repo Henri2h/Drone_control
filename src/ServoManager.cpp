@@ -23,58 +23,69 @@ sudo ./Servo
 
 #define SERVO_MIN 1250 /*mS*/
 #define SERVO_MAX 1750 /*mS*/
-
-#define PWM_OUTPUT 2
-
+#define MOTOR_COUNT 4
 
 using namespace Navio;
 
+class ServoManager
+{
 
-class ServoManager {
-    
-    std::unique_ptr <RCOutput> get_rcout()
+    std::unique_ptr<RCOutput> get_rcout()
     {
         if (get_navio_version() == NAVIO2)
         {
-            auto ptr = std::unique_ptr <RCOutput>{ new RCOutput_Navio2() };
-            return ptr;
-        } else
-        {
-            auto ptr = std::unique_ptr <RCOutput>{ new RCOutput_Navio() };
+            auto ptr = std::unique_ptr<RCOutput>{new RCOutput_Navio2()};
             return ptr;
         }
-
+        else
+        {
+            auto ptr = std::unique_ptr<RCOutput>{new RCOutput_Navio()};
+            return ptr;
+        }
     }
 
-    std::unique_ptr <RCOutput> pwm = get_rcout();
-    
-    public :
-    ServoManager(){
-/* if (check_apm()) {
-                return 1;
-            }*/
-            if (getuid()) {
-                fprintf(stderr, "Not root. Please launch like this: sudo \n");
-                throw "Not root!";
-            }
+    std::unique_ptr<RCOutput> pwm = get_rcout();
 
+  public:
+    ServoManager()
+    {
+        if (getuid())
+        {
+            fprintf(stderr, "Not root. Please launch like this: sudo \n");
+            throw "Not root!";
+        }
 
-            if( !(pwm->initialize(PWM_OUTPUT)) ) {
+        for (size_t i = 0; i < 4; i++)
+        {
+            if (!(pwm->initialize(i)))
+            {
                 fprintf(stderr, "Error\n");
             }
+        }
     }
 
-    int initialize()
-    {                 
-        pwm->set_frequency(PWM_OUTPUT, 50);
+    int initialize(){
+        for (size_t i = 0; i < 4; i++)
+        {
+            pwm->set_frequency(i, 50);
 
-        if ( !(pwm->enable(PWM_OUTPUT)) ) {
-            return 1;
+            if (!(pwm->enable(i)))
+            {
+                return 1;
+            }
         }
         return 0;
     }
-    
-    void setDuty(int duty){
-        pwm->set_duty_cycle(PWM_OUTPUT, duty);
+
+    void setDuty(int duty[])
+    {
+
+        for (size_t i = 0; i < 4; i++)
+        {
+            int a = duty[i];
+            if (a < SERVO_MIN) a = SERVO_MIN;
+            if (a > SERVO_MAX) a = SERVO_MAX;
+            pwm->set_duty_cycle(i, duty[i]);
+        }
     }
 };
