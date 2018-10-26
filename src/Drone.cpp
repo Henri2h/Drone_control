@@ -54,12 +54,11 @@ using namespace std;
 typedef std::chrono::high_resolution_clock TimeM;
 
 int i = 0;
-string version = "0.0.7";
+string version = "0.0.8";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
 IMU imu = IMU();
-IMU_data_processing imu_data_proc = IMU_data_processing();
 PID pid = PID();
 LEDManager led = LEDManager();
 Remote remote = Remote();
@@ -172,7 +171,8 @@ void loop()
     // angles
     imu.getComplementar(ang); // get angles
     imu.getRates(rates);
-    float *accPos = imu_data_proc.getAngleAccel();
+
+    float *accPos = imu.getAngleAccel();
 
     if (false)
     {

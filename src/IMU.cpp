@@ -16,7 +16,6 @@ All angle are expressed in degrees
 #include <unistd.h>
 #include <string>
 #include <memory>
-#include "Math.cpp"
 
 #define AXIS_NB 3       // three axis
 #define ARR_ACCEL_POS 0 // position of accel data in array
@@ -35,7 +34,7 @@ class IMU
     const float kAcc = 0.02;
     const float kGyr = 0.98;
 
-    static float imu_values[9];
+    float imu_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     std::unique_ptr<InertialSensor> get_inertial_sensor(std::string sensor_name)
     {
@@ -66,29 +65,29 @@ class IMU
 
         int samples = 200;
         float accRaw[AXIS_NB][samples];
-        float gyroRaw[AXIS_NB][samples];
+        float gyrRaw[AXIS_NB][samples];
 
         for (size_t i = 0; i < samples; i++)
         {
             update();
 
-            for (size_t i = 0; i < AXIS_NB; i++)
+            for (size_t k = 0; i < AXIS_NB; i++)
             {
                 accRaw[k][i] = imu_values[k];
                 gyrRaw[k][i] = imu_values[k + ARR_GYRO_POS];
             }
         }
 
-        float gyroOffset[3] = {0, 0, 0};
+        float gyrOffset[3] = {0, 0, 0};
         float accOffset[3] = {0, 0, 0};
 
         for (size_t i = 0; i < samples; i++) // add all the samples
         {
 
-            for (size_t i = 0; i < AXIS_NB; i++)
+            for (size_t k = 0; i < AXIS_NB; i++)
             {
-                accOffset += accRaw[k][i];
-                gyroOffset += gyroRaw[k][i];
+                accOffset[k] += accRaw[k][i];
+                gyrOffset[k] += gyrRaw[k][i];
             }
         }
 
@@ -96,9 +95,9 @@ class IMU
         for (size_t i = 0; i < AXIS_NB; i++) // divide and display the offsets
         {
             accOffset[i] /= samples;
-            gyroOffset[i] /= samples;
+            gyrOffset[i] /= samples;
 
-            std::cout << "  i : |" << i << "| acc : " << accOffsets[i] << " gyro : " << gyroOffset[i] << " ";
+            std::cout << "  i : |" << i << "| acc : " << accOffset[i] << " gyro : " << gyrOffset[i] << " ";
         }
         std::cout << "\n";
     }
@@ -132,22 +131,23 @@ class IMU
 
         for (size_t i = ARR_GYRO_POS; i < ARR_GYRO_POS + AXIS_NB; i++)
         {
-            imu_values[i] *= 180 / PI
+            imu_values[i] *= 180 / PI;
         }
     }
+
     void setDt(float dt_in)
     {
         dt = dt_in;
     }
 
-    float *getAngleAccel(float *ac)
+    float *getAngleAccel()
     {
         static float ang[3] = {0, 0, 0};
 
-        if (ac[z] != 0)
+        if (imu_values[z] != 0)
         {
-            ang[x] = atan(ac[x] / ac[z]) * 180 / PI;
-            ang[y] = atan(ac[y] / ac[z]) * 180 / PI; // convert in degrees
+            ang[x] = atan(imu_values[x] / imu_values[z]) * 180 / PI;
+            ang[y] = atan(imu_values[y] / imu_values[z]) * 180 / PI; // convert in degrees
         }
         else
         { // it really mean that we cannot determine angles this way
@@ -157,11 +157,11 @@ class IMU
 
         // non trivial rules
         /*
-        if(ac[z] <= 0 && ac[y] <= 0){ ang[x] -= 180; }
-        else if (ac[z] <=0 && ac[y] > 0){ ang[x] += 180; }
+        if(imu_values[z] <= 0 && imu_values[y] <= 0){ ang[x] -= 180; }
+        else if (imu_values[z] <=0 && imu_values[y] > 0){ ang[x] += 180; }
 
-        if(ac[z] <= 0 && ac[x] <= 0){ ang[y] -= 180; }
-        else if (ac[z] <= 0 && ac[x] > 0){ ang[y] += 180; }
+        if(imu_values[z] <= 0 && imu_values[x] <= 0){ ang[y] -= 180; }
+        else if (imu_values[z] <= 0 && imu_values[x] > 0){ ang[y] += 180; }
         */
 
         return ang;
@@ -185,7 +185,7 @@ class IMU
         }
     }
 
-    float *getComplementar(float *ang, float dt)
+    float *getComplementar(float *ang)
     {
         for (size_t i = 0; i < 3; i++)
         { // to use gyration
