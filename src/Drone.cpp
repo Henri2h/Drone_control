@@ -29,7 +29,7 @@ sudo ./Servo
 #include "PID.cpp"
 #include "LEDManager.cpp"
 #include "Remote.cpp"
-
+ 
 #define cmd_throttle 2
 #define cmd_pitch 1
 #define cmd_roll 0
@@ -79,6 +79,7 @@ int pid_debug[3] = {0, 0, 0};
 int motors_output[4] = {0, 0, 0, 0};
 int sensors[2] = {0, 0}; // pressure, temperature
 int frequency_crtl[] = {0, 0};
+int acro_commands[3] = {0, 0, 0};
 
 bool isArmed = false;
 bool isArming = false;
@@ -190,15 +191,31 @@ void loop()
     pid.setK(commands[cmd_kp], commands[cmd_kd], commands[cmd_ki]);
     // pid
     int cmd[3] = {commands[cmd_roll], commands[cmd_pitch], commands[cmd_yaw]};
-
-    int stabilisation_mode = 0;
-    if (stabilisation_mode == 0)
+    int Kp_acro  = 1;
+    int stabilisation_mode = 1;
+    if (stabilisation_mode == 0) // made rate 
     { // mode acro
         // pid
+        
+        for (size_t i; i < 3; i++){
+            acro_commands[i] += (cmd[i] - ang[i]) * Kp_acro * dt; // error and integration
+        }
+        
+        // send 
         float rates[3] = {imu_read[4], imu_read[5], imu_read[6]};
         pid.getPID(pid_out, pid_debug, cmd, rates, dt);
     }
-    else if (stabilisation_mode == 1)
+    else if (stabilisation_mode == 1){
+         for (size_t i; i < 3; i++){
+            acro_commands[i] = (cmd[i] - ang[i]) * Kp_acro; // error and integration
+        }
+        
+        // send 
+        float rates[3] = {imu_read[4], imu_read[5], imu_read[6]};
+        pid.getPID(pid_out, pid_debug, acro_commands, rates, dt);
+
+    }
+    else if (stabilisation_mode == 2)
     { // mode angle
         // pid
         pid.getPID(pid_out, pid_debug, cmd, ang, dt);
