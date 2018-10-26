@@ -19,20 +19,27 @@ All angle are expressed in degrees
 
 #define AXIS_NB 3       // three axis
 #define ARR_ACCEL_POS 0 // position of accel data in array
-#define ARR_GYRO_POS 1  // position of gyro data in array
-#define ARR_MAG_POS 2   // position of mag data in array
+#define ARR_GYRO_POS 3  // position of gyro data in array
+#define ARR_MAG_POS 6   // position of mag data in array
+
+#define PI 3.1415926535
 
 class IMU
 {
+
+    double gyrOffset[3] = {0, 0, 0};
+    double accOffset[3] = {0, 0, 0};
+
     float dt;
 
     const int x = 0;
     const int y = 1;
     const int z = 2;
-    const float PI = 3.1415926535;
 
     const float kAcc = 0.02;
     const float kGyr = 0.98;
+
+    const float g = 9.81;
 
     float imu_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -40,13 +47,13 @@ class IMU
     {
         if (sensor_name == "mpu")
         {
-            printf("Selected: MPU9250\n");
+            printf("[ IMU ] : Selected: MPU9250\n");
             auto ptr = std::unique_ptr<InertialSensor>{new MPU9250()};
             return ptr;
         }
         else if (sensor_name == "lsm")
         {
-            printf("Selected: LSM9DS1\n");
+            printf("[ IMU ] : Selected: LSM9DS1\n");
             auto ptr = std::unique_ptr<InertialSensor>{new LSM9DS1()};
             return ptr;
         }
@@ -61,45 +68,31 @@ class IMU
   public:
     void computeOffsets()
     {
-        update();
-
-        int samples = 200;
-        float accRaw[AXIS_NB][samples];
-        float gyrRaw[AXIS_NB][samples];
-
-        for (size_t i = 0; i < samples; i++)
-        {
-            update();
-
-            for (size_t k = 0; i < AXIS_NB; i++)
-            {
-                accRaw[k][i] = imu_values[k];
-                gyrRaw[k][i] = imu_values[k + ARR_GYRO_POS];
-            }
-        }
-
-        float gyrOffset[3] = {0, 0, 0};
-        float accOffset[3] = {0, 0, 0};
+        gyrOffset[3] = {0, 0, 0};
+        accOffset[3] = {0, 0, 0};
+        int samples = 5000;
 
         for (size_t i = 0; i < samples; i++) // add all the samples
         {
-
-            for (size_t k = 0; i < AXIS_NB; i++)
+            update();
+            for (size_t k = 0; k < AXIS_NB; k++)
             {
-                accOffset[k] += accRaw[k][i];
-                gyrOffset[k] += gyrRaw[k][i];
+                accOffset[k] += imu_values[k];
+                gyrOffset[k] += imu_values[k + ARR_GYRO_POS];
             }
+            accOffset[z] -= g;
+
+            usleep(5);
         }
 
-        std::cout << "IMU offsets : ";
+        std::cout << "[ IMU ] : offsets : \n";
         for (size_t i = 0; i < AXIS_NB; i++) // divide and display the offsets
         {
             accOffset[i] /= samples;
             gyrOffset[i] /= samples;
 
-            std::cout << "  i : |" << i << "| acc : " << accOffset[i] << " gyro : " << gyrOffset[i] << " ";
+            std::cout << "[ IMU ] : scaled  i : |" << i << "| acc : " << accOffset[i] << " gyro : " << gyrOffset[i] << "\n";
         }
-        std::cout << "\n";
     }
 
     IMU()
@@ -127,12 +120,21 @@ class IMU
         sensor->read_gyroscope(&imu_values[3], &imu_values[4], &imu_values[5]);
         sensor->read_magnetometer(&imu_values[6], &imu_values[7], &imu_values[8]);
 
+        
+        for(size_t i = 0; i < AXIS_NB i++)
+        {
+            imu_values[i] -= accOffset[i];
+            imu_values[i + ARR_GYRO_POS] -= gyrOffset[i];
+        }
+        
+
+        //  std::cout << imu_values[0] << " " << imu_values[1] << " " << imu_values[2] << "   |   " << imu_values[3] << " " << imu_values[4] << " " << imu_values[5] << "   |   " << imu_values[6] << " " << imu_values[7] << " " << imu_values[8] << "\n";
         // convert radian to degrees:
 
-        for (size_t i = ARR_GYRO_POS; i < ARR_GYRO_POS + AXIS_NB; i++)
+        /* for (size_t i = ARR_GYRO_POS; i < ARR_GYRO_POS + AXIS_NB; i++)
         {
             imu_values[i] *= 180 / PI;
-        }
+        }*/
     }
 
     void setDt(float dt_in)

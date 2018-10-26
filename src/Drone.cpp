@@ -47,7 +47,6 @@ sudo ./Servo
 #define pid_roll 0
 #define pid_yaw 2
 
-#define g 9.81
 
 using namespace std;
 
@@ -272,7 +271,7 @@ int main(int argc, char *argv[])
     double frequency = 900;      //Hz
     double f_dt = 1 / frequency; //seconds
     long long int f_dt_n = f_dt * pow(10, 9);
-    cout << f_dt_n << "\n";
+    cout << "[ MAIN ] : frequency : " << f_dt_n << "Hz \n";
     setup();
 
     // timer variables
