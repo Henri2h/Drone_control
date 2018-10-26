@@ -25,11 +25,10 @@ sudo ./Servo
 #include "RCInputManager.cpp"
 #include "ServoManager.cpp"
 #include "IMU.cpp"
-#include "IMU_data_processing.cpp"
 #include "PID.cpp"
 #include "LEDManager.cpp"
 #include "Remote.cpp"
- 
+
 #define cmd_throttle 2
 #define cmd_pitch 1
 #define cmd_roll 0
@@ -71,7 +70,7 @@ auto last = TimeM::now();
 auto t_last = TimeM::now();
 float t = 0; // time
 float ang[3] = {0, 0, 0};
-float gyrAng[3] = {0, 0, 0};
+float rates[3] = {0, 0, 0};
 float motors[4] = {0, 0, 0, 0};
 int commands[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 int pid_out[3] = {0, 0, 0};
@@ -149,9 +148,9 @@ void loop()
 {
     // get informations
     auto now = TimeM::now();
+    imu.update(); // get imu data just after timing
 
     rc.read(commands);
-    auto imu_read = imu.read();
 
     // process informations
     double now_n = chrono::duration<double, nano>(now - time_start).count();
@@ -163,13 +162,17 @@ void loop()
     float dt = diff_nano * pow(10, -9.0);
     t = now_n * pow(10, -9.0);
 
+    // update imu
+
+    imu.setDt(dt); // update dt
+
     // safety :
     safety();
 
     // angles
-    imu_data_proc.getGyrationAngle(gyrAng, imu_read, dt);
-    imu_data_proc.getComplementar(ang, imu_read, dt);
-    float *accPos = imu_data_proc.getAngleAccel(imu_read);
+    imu.getComplementar(ang); // get angles
+    imu.getRates(rates);
+    float *accPos = imu_data_proc.getAngleAccel();
 
     if (false)
     {
@@ -191,29 +194,29 @@ void loop()
     pid.setK(commands[cmd_kp], commands[cmd_kd], commands[cmd_ki]);
     // pid
     int cmd[3] = {commands[cmd_roll], commands[cmd_pitch], commands[cmd_yaw]};
-    int Kp_acro  = 1;
+    int Kp_acro = 1;
     int stabilisation_mode = 1;
-    if (stabilisation_mode == 0) // made rate 
-    { // mode acro
+    if (stabilisation_mode == 0) // made rate
+    {
         // pid
-        
-        for (size_t i; i < 3; i++){
+
+        for (size_t i; i < 3; i++)
+        {
             acro_commands[i] += (cmd[i] - ang[i]) * Kp_acro * dt; // error and integration
         }
-        
-        // send 
-        float rates[3] = {imu_read[4], imu_read[5], imu_read[6]};
+
+        // send
         pid.getPID(pid_out, pid_debug, cmd, rates, dt);
     }
-    else if (stabilisation_mode == 1){
-         for (size_t i; i < 3; i++){
+    else if (stabilisation_mode == 1)
+    {
+        for (size_t i; i < 3; i++)
+        {
             acro_commands[i] = (cmd[i] - ang[i]) * Kp_acro; // error and integration
         }
-        
-        // send 
-        float rates[3] = {imu_read[4], imu_read[5], imu_read[6]};
-        pid.getPID(pid_out, pid_debug, acro_commands, rates, dt);
 
+        // send
+        pid.getPID(pid_out, pid_debug, acro_commands, rates, dt);
     }
     else if (stabilisation_mode == 2)
     { // mode angle
