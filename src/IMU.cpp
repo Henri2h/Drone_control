@@ -29,6 +29,7 @@ class IMU
 
     double gyrOffset[3] = {0, 0, 0};
     double accOffset[3] = {0, 0, 0};
+    bool offsetSet = false;
 
     float dt;
 
@@ -68,9 +69,14 @@ class IMU
   public:
     void computeOffsets()
     {
-        gyrOffset[3] = {0, 0, 0};
-        accOffset[3] = {0, 0, 0};
-        int samples = 5000;
+        offsetSet = false;
+        for (size_t i = 0; i < AXIS_NB; i++)
+        {
+            gyrOffset[i] = 0;
+            accOffset[i] = 0;
+        }
+
+        int samples = 900;
 
         for (size_t i = 0; i < samples; i++) // add all the samples
         {
@@ -82,7 +88,7 @@ class IMU
             }
             accOffset[z] -= g;
 
-            usleep(5);
+            usleep(50);
         }
 
         std::cout << "[ IMU ] : offsets : \n";
@@ -93,6 +99,8 @@ class IMU
 
             std::cout << "[ IMU ] : scaled  i : |" << i << "| acc : " << accOffset[i] << " gyro : " << gyrOffset[i] << "\n";
         }
+
+        offsetSet = true;
     }
 
     IMU()
@@ -117,24 +125,16 @@ class IMU
     {
         sensor->update();
         sensor->read_accelerometer(&imu_values[0], &imu_values[1], &imu_values[2]);
-        sensor->read_gyroscope(&imu_values[3], &imu_values[4], &imu_values[5]);
+        sensor->read_gyroscope(&imu_values[3], &imu_values[4], &imu_values[5]); // in degrees
         sensor->read_magnetometer(&imu_values[6], &imu_values[7], &imu_values[8]);
 
-        
-        for(size_t i = 0; i < AXIS_NB i++)
+        for (size_t i = 0; i < AXIS_NB && offsetSet; i++) // calculate them if ofset are set
         {
             imu_values[i] -= accOffset[i];
             imu_values[i + ARR_GYRO_POS] -= gyrOffset[i];
         }
-        
 
-        //  std::cout << imu_values[0] << " " << imu_values[1] << " " << imu_values[2] << "   |   " << imu_values[3] << " " << imu_values[4] << " " << imu_values[5] << "   |   " << imu_values[6] << " " << imu_values[7] << " " << imu_values[8] << "\n";
-        // convert radian to degrees:
-
-        /* for (size_t i = ARR_GYRO_POS; i < ARR_GYRO_POS + AXIS_NB; i++)
-        {
-            imu_values[i] *= 180 / PI;
-        }*/
+        // std::cout << imu_values[0] << " " << imu_values[1] << " " << imu_values[2] << "   |   " << imu_values[3] << " " << imu_values[4] << " " << imu_values[5] << "   |   " << imu_values[6] << " " << imu_values[7] << " " << imu_values[8] << "\n";
     }
 
     void setDt(float dt_in)
@@ -169,21 +169,28 @@ class IMU
         return ang;
     }
 
-    float *getGyrationAngle(float ang[])
+    void getAcceleration(float *ang)
     {
         for (size_t i = 0; i < 3; i++)
         {
-            ang[i] += imu_values[i + ARR_GYRO_POS] * dt; // to use gyration
+            ang[i] = imu_values[i]; // acceleration
         }
-        return ang;
     }
 
-    float *getRates(float *rates)
+    void getRates(float *rates) // rates
     {
 
         for (size_t i = 0; i < 3; i++)
         {
             rates[i] = imu_values[i + ARR_GYRO_POS];
+        }
+    }
+
+    void getGyrationAngle(float *ang)
+    {
+        for (size_t i = 0; i < 3; i++)
+        {
+            ang[i] += imu_values[i + ARR_GYRO_POS] * dt; // to use gyration
         }
     }
 

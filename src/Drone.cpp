@@ -53,7 +53,7 @@ using namespace std;
 typedef std::chrono::high_resolution_clock TimeM;
 
 int i = 0;
-string version = "0.0.8";
+string version = "0.0.9";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
@@ -68,7 +68,10 @@ auto last = TimeM::now();
 auto t_last = TimeM::now();
 float t = 0; // time
 float ang[3] = {0, 0, 0};
+
+float acceleration[3] = {0, 0, 0};
 float rates[3] = {0, 0, 0};
+
 float motors[4] = {0, 0, 0, 0};
 int commands[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 int pid_out[3] = {0, 0, 0};
@@ -137,7 +140,7 @@ void setup()
 
     // launch remote
 
-    remote.launch(ang, pid_out, pid_debug, sensors, &t);
+    remote.launch(ang, acceleration, rates, pid_out, pid_debug, sensors, &t);
 
     led.setOK();
 }
@@ -170,6 +173,7 @@ void loop()
     // angles
     imu.getComplementar(ang); // get angles
     imu.getRates(rates);
+    imu.getAcceleration(acceleration);
 
     float *accPos = imu.getAngleAccel();
 
