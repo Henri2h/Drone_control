@@ -1,5 +1,15 @@
+# other libraries
 Examples/
 HACKFLIGHT/
+CDD/
+
+# IDE
 .vscode/
+
+# output files
 src/Drone
+*.a
+*.o
+
+# other tests
 remote/uws
