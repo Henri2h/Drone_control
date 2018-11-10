@@ -3,7 +3,7 @@
 #define cmd_roll 0
 #define cmd_yaw 3
 #define cmd_arming 8
-#define flight_mode 5
+#define cmd_flight_mode 5
 #define cmd_kp 6
 #define cmd_kd 4
 #define cmd_ki 7
