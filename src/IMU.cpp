@@ -198,11 +198,12 @@ class IMU
         }
     }
 
-    float *getComplementar(float *ang)
+    float *getComplementar(float *ang, float *ang_acc)
     {
+        getAngleAccel(ang_acc)
         for (size_t i = 0; i < 3; i++)
         { // to use gyration
-            ang[i] = (ang[i] + imu_values[i + ARR_GYRO_POS] * dt) * kGyr + imu_values[i] * kAcc;
+            ang[i] = (ang[i] + imu_values[i + ARR_GYRO_POS] * dt) * kGyr + ang_acc[i] * kAcc;
         }
         return ang;
     }

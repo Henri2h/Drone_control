@@ -43,6 +43,7 @@ auto last = TimeM::now();
 auto t_last = TimeM::now();
 float t = 0; // time
 float ang[3] = {0, 0, 0};
+float ang_acc[3] = {0, 0, 0};
 
 float acceleration[3] = {0, 0, 0};
 float rates[3] = {0, 0, 0};
@@ -149,7 +150,7 @@ void loop()
     safety();
 
     // angles
-    imu.getComplementar(ang); // get angles
+    imu.getComplementar(ang, ang_acc); // get angles
     imu.getRates(rates);
     imu.getAcceleration(acceleration);
 
