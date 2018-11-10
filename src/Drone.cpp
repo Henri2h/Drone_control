@@ -1,17 +1,9 @@
 /*
-Provided to you by Emlid Ltd (c) 2015.
-twitter.com/emlidtech || www.emlid.com || info@emlid.com
 
-Example: Control servos connected to PWM driver onboard of Navio2 shield for Raspberry Pi.
+Drone control
 
-Connect servo to Navio2's rc pid_out and watch it work.
-PWM_OUTPUT = 0 complies to channel number 1, 1 to channel number 2 and so on.
-To use full range of your servo correct SERVO_MIN and SERVO_MAX according to it's specification.
-
-To run this example navigate to the directory containing it and run following commands:
-make
-sudo ./Servo
 */
+
 #include <Common/Util.h>
 #include <unistd.h>
 #include <memory>
@@ -25,42 +17,25 @@ sudo ./Servo
 #include "RCInputManager.cpp"
 #include "ServoManager.cpp"
 #include "IMU.cpp"
-#include "PID.cpp"
+#include "Stab/Stabilisation.cpp"
 #include "LEDManager.cpp"
 #include "Remote.cpp"
 
-#define cmd_throttle 2
-#define cmd_pitch 1
-#define cmd_roll 0
-#define cmd_yaw 3
-#define cmd_arming 8
-#define flight_mode 5
-#define cmd_kp 6
-#define cmd_kd 4
-#define cmd_ki 7
-
-#define pos_x 0
-#define pos_y 1
-#define pos_z 2
-
-#define pid_pitch 1
-#define pid_roll 0
-#define pid_yaw 2
-
+#include "Ref.h"
 
 using namespace std;
 
 typedef std::chrono::high_resolution_clock TimeM;
 
 int i = 0;
-string version = "0.0.9";
+string version = "0.1.1";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
 IMU imu = IMU();
-PID pid = PID();
 LEDManager led = LEDManager();
 Remote remote = Remote();
+Stabilisation stab = Stabilisation();
 
 auto time_start = TimeM::now();
 
@@ -72,19 +47,23 @@ float ang[3] = {0, 0, 0};
 float acceleration[3] = {0, 0, 0};
 float rates[3] = {0, 0, 0};
 
-float motors[4] = {0, 0, 0, 0};
 int commands[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+// remote
 int pid_out[3] = {0, 0, 0};
 int pid_debug[3] = {0, 0, 0};
+
+float motors[4] = {0, 0, 0, 0};
 int motors_output[4] = {0, 0, 0, 0};
 int sensors[2] = {0, 0}; // pressure, temperature
 int frequency_crtl[] = {0, 0};
-int acro_commands[3] = {0, 0, 0};
 
 bool isArmed = false;
 bool isArming = false;
 
+// time
 auto arming_t_started = TimeM::now();
+
 void safety()
 {
     //cout << "throttle : " << commands[cmd_throttle] << " arming : " << commands[cmd_arming] <<  "\n";
@@ -164,7 +143,6 @@ void loop()
     t = now_n * pow(10, -9.0);
 
     // update imu
-
     imu.setDt(dt); // update dt
 
     // safety :
@@ -175,79 +153,8 @@ void loop()
     imu.getRates(rates);
     imu.getAcceleration(acceleration);
 
-    float *accPos = imu.getAngleAccel();
-
-    if (false)
-    {
-        cout << "Accelerometer : ";
-        for (size_t i = 0; i < 3; i++)
-        {
-            cout << accPos[i] << ", ";
-        }
-        cout << "\n";
-
-        cout << "gyr : ";
-        for (size_t i = 0; i < 3; i++)
-        {
-            cout << ang[i] << ", ";
-        }
-        cout << "\n";
-    }
-
-    pid.setK(commands[cmd_kp], commands[cmd_kd], commands[cmd_ki]);
-    // pid
-    int cmd[3] = {commands[cmd_roll], commands[cmd_pitch], commands[cmd_yaw]};
-    int Kp_acro = 1;
-    int stabilisation_mode = 1;
-    if (stabilisation_mode == 0) // made rate
-    {
-        // pid
-
-        for (size_t i; i < 3; i++)
-        {
-            acro_commands[i] += (cmd[i] - ang[i]) * Kp_acro * dt; // error and integration
-        }
-
-        // send
-        pid.getPID(pid_out, pid_debug, cmd, rates, dt);
-    }
-    else if (stabilisation_mode == 1)
-    {
-        for (size_t i; i < 3; i++)
-        {
-            acro_commands[i] = (cmd[i] - ang[i]) * Kp_acro; // error and integration
-        }
-
-        // send
-        pid.getPID(pid_out, pid_debug, acro_commands, rates, dt);
-    }
-    else if (stabilisation_mode == 2)
-    { // mode angle
-        // pid
-        pid.getPID(pid_out, pid_debug, cmd, ang, dt);
-    }
-
-    // motor commands
-    /*
-    self.esc.v0 = ui.throttle + pidRoll + pidPitch - pidYaw
-    self.esc.v1 = ui.throttle - pidRoll + pidPitch + pidYaw
-    self.esc.v2 = ui.throttle - pidRoll - pidPitch - pidYaw
-    self.esc.v3 = ui.throttle + pidRoll - pidPitch + pidYaw
-    */
-    if (isArmed && commands[cmd_throttle] > 1100)
-    {
-        motors_output[0] = commands[cmd_throttle] - pid_out[pid_roll] + pid_out[pid_pitch] - pid_out[pid_yaw];
-        motors_output[1] = commands[cmd_throttle] + pid_out[pid_roll] + pid_out[pid_pitch] + pid_out[pid_yaw];
-        motors_output[2] = commands[cmd_throttle] + pid_out[pid_roll] - pid_out[pid_pitch] - pid_out[pid_yaw];
-        motors_output[3] = commands[cmd_throttle] - pid_out[pid_roll] - pid_out[pid_pitch] + pid_out[pid_yaw];
-    }
-    else
-    {
-        motors_output[0] = 0;
-        motors_output[1] = 0;
-        motors_output[2] = 0;
-        motors_output[3] = 0;
-    }
+    // stabilize
+    stab.Stabilize(motors_output, isArmed, commands, ang, rates, dt);
     servo.setDuty(motors_output);
     i++;
 
@@ -264,7 +171,7 @@ void loop()
              << "\n";
         last = now;
 
-        pid.displayK();
+        //        pid.displayK();
     }
 }
 
