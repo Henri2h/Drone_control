@@ -10,10 +10,39 @@ using namespace std;
 class Remote
 {
   private:
+    static void sendData(WebSocket<SERVER> *ws, float *values, float *time_pointer, OpCode opCode)
+    {
+        // preparing results :
+        char const *time_str = to_string(*time_pointer).c_str();
+        char const *ang_0_str = to_string(values[0]).c_str();
+        char const *ang_1_str = to_string(values[1]).c_str();
+        char const *ang_2_str = to_string(values[2]).c_str();
+
+        // sending data
+        ws->send(ang_0_str, strlen(ang_0_str), opCode);
+        ws->send(ang_1_str, strlen(ang_1_str), opCode);
+        ws->send(ang_2_str, strlen(ang_2_str), opCode);
+        ws->send(time_str, strlen(time_str), opCode);
+    }
+    static void sendData(WebSocket<SERVER> *ws, int *values, float *time_pointer, OpCode opCode)
+    {
+        // preparing results :
+        char const *time_str = to_string(*time_pointer).c_str();
+        char const *ang_0_str = to_string(values[0]).c_str();
+        char const *ang_1_str = to_string(values[1]).c_str();
+        char const *ang_2_str = to_string(values[2]).c_str();
+
+        // sending data
+        ws->send(ang_0_str, strlen(ang_0_str), opCode);
+        ws->send(ang_1_str, strlen(ang_1_str), opCode);
+        ws->send(ang_2_str, strlen(ang_2_str), opCode);
+        ws->send(time_str, strlen(time_str), opCode);
+    }
+
     static void start_remote(float *ang_in, float *acceleration_in, float *rates_in, int *pid_in, int *pid_debug_in, int *sensors_in, float *time_now_in)
     {
         static float *time_pointer = time_now_in;
-        static float *ang_pointer = ang_in;
+        static float *ang = ang_in;
         static int *pid = pid_in;
         static int *pid_debug = pid_debug_in;
         static int *sensors = sensors_in;
@@ -38,84 +67,31 @@ class Remote
                 if (r.compare("#AngComp") == 0)
                 {
                     // preparing results :
-                    char const *time_str = to_string(*time_pointer).c_str();
-                    char const *ang_0_str = to_string(ang_pointer[0]).c_str();
-                    char const *ang_1_str = to_string(ang_pointer[1]).c_str();
-                    char const *ang_2_str = to_string(ang_pointer[2]).c_str();
-
-                    // sending data
-                    ws->send(ang_0_str, strlen(ang_0_str), opCode);
-                    ws->send(ang_1_str, strlen(ang_1_str), opCode);
-                    ws->send(ang_2_str, strlen(ang_2_str), opCode);
-                    ws->send(time_str, strlen(time_str), opCode);
+                    sendData(ws, ang, time_pointer, opCode);
                 }
 
                 else if (r.compare("#PIDErrP") == 0)
                 {
-                    // preparing results :
-                    char const *time_str = to_string(*time_pointer).c_str();
-                    char const *ang_0_str = to_string(pid_debug[0]).c_str();
-                    char const *ang_1_str = to_string(pid_debug[1]).c_str();
-                    char const *ang_2_str = to_string(pid_debug[2]).c_str();
-
-                    // sending data
-                    ws->send(ang_0_str, strlen(ang_0_str), opCode);
-                    ws->send(ang_1_str, strlen(ang_1_str), opCode);
-                    ws->send(ang_2_str, strlen(ang_2_str), opCode);
-                    ws->send(time_str, strlen(time_str), opCode);
+                    sendData(ws, pid_debug, time_pointer, opCode);
                 }
                 else if (r.compare("#PID") == 0)
                 {
-                    // preparing results :
-                    char const *time_str = to_string(*time_pointer).c_str();
-                    char const *ang_0_str = to_string(pid[0]).c_str();
-                    char const *ang_1_str = to_string(pid[1]).c_str();
-                    char const *ang_2_str = to_string(pid[2]).c_str();
-
-                    // sending data
-                    ws->send(ang_0_str, strlen(ang_0_str), opCode);
-                    ws->send(ang_1_str, strlen(ang_1_str), opCode);
-                    ws->send(ang_2_str, strlen(ang_2_str), opCode);
-                    ws->send(time_str, strlen(time_str), opCode);
+                    sendData(ws, pid, time_pointer, opCode);
                 }
 
-                else if (r.compare("#ACC") == 0)
+                else if (r.compare("#Acc") == 0)
                 {
-                    // preparing results :
-                    char const *time_str = to_string(*time_pointer).c_str();
-                    char const *ang_0_str = to_string(acceleration[0]).c_str();
-                    char const *ang_1_str = to_string(acceleration[1]).c_str();
-                    char const *ang_2_str = to_string(acceleration[2]).c_str();
-
-                    // sending data
-                    ws->send(ang_0_str, strlen(ang_0_str), opCode);
-                    ws->send(ang_1_str, strlen(ang_1_str), opCode);
-                    ws->send(ang_2_str, strlen(ang_2_str), opCode);
-                    ws->send(time_str, strlen(time_str), opCode);
+                    sendData(ws, acceleration, time_pointer, opCode);
                 }
-                else if (r.compare("#GYR") == 0)
+                else if (r.compare("#Gyr") == 0)
                 {
-                    // preparing results :
-                    char const *time_str = to_string(*time_pointer).c_str();
-                    char const *ang_0_str = to_string(rates[0]).c_str();
-                    char const *ang_1_str = to_string(rates[1]).c_str();
-                    char const *ang_2_str = to_string(rates[2]).c_str();
-
-                    // sending data
-                    ws->send(ang_0_str, strlen(ang_0_str), opCode);
-                    ws->send(ang_1_str, strlen(ang_1_str), opCode);
-                    ws->send(ang_2_str, strlen(ang_2_str), opCode);
-                    ws->send(time_str, strlen(time_str), opCode);
+                    sendData(ws, rates, time_pointer, opCode);
                 }
-                else {
+                else
+                {
                     std::cout << "[ Remote ] : command unknown : " << r << "\n";
                 }
             }
-        });
-
-        h.onHttpRequest([&](HttpResponse *res, HttpRequest req, char *data, size_t length,
-                            size_t remainingBytes) {
-            res->end(response.data(), response.length());
         });
 
         if (h.listen(8766))
