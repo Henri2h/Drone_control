@@ -125,7 +125,7 @@ class IMU
     {
         sensor->update();
         sensor->read_accelerometer(&imu_values[0], &imu_values[1], &imu_values[2]);
-        sensor->read_gyroscope(&imu_values[3], &imu_values[4], &imu_values[5]); // in degrees
+        sensor->read_gyroscope(&imu_values[3], &imu_values[4], &imu_values[5]);
         sensor->read_magnetometer(&imu_values[6], &imu_values[7], &imu_values[8]);
 
         for (size_t i = 0; i < AXIS_NB && offsetSet; i++) // calculate them if ofset are set
@@ -135,6 +135,12 @@ class IMU
         }
 
         // std::cout << imu_values[0] << " " << imu_values[1] << " " << imu_values[2] << "   |   " << imu_values[3] << " " << imu_values[4] << " " << imu_values[5] << "   |   " << imu_values[6] << " " << imu_values[7] << " " << imu_values[8] << "\n";
+        // convert radian to degrees:
+
+        for (size_t i = ARR_GYRO_POS; i < ARR_GYRO_POS + AXIS_NB && offsetSet; i++)
+        {
+            imu_values[i] *= 180 / PI;
+        }
     }
 
     void setDt(float dt_in)
@@ -142,9 +148,9 @@ class IMU
         dt = dt_in;
     }
 
-    float *getAngleAccel()
+    void getAngleAccel(float *ang)
     {
-        static float ang[3] = {0, 0, 0};
+     
 
         if (imu_values[z] != 0)
         {
@@ -166,7 +172,6 @@ class IMU
         else if (imu_values[z] <= 0 && imu_values[x] > 0){ ang[y] += 180; }
         */
 
-        return ang;
     }
 
     void getAcceleration(float *ang)
@@ -179,7 +184,6 @@ class IMU
 
     void getRates(float *rates) // rates
     {
-
         for (size_t i = 0; i < 3; i++)
         {
             rates[i] = imu_values[i + ARR_GYRO_POS];

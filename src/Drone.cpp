@@ -28,7 +28,7 @@ using namespace std;
 typedef std::chrono::high_resolution_clock TimeM;
 
 int i = 0;
-string version = "0.1.1";
+string version = "0.1.4";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
