@@ -38,7 +38,7 @@ class Stabilisation
 
         // compute commands
         // update orders
-        if (1)
+        if (false)
         {
             attitude_c.update(cmd, ang, rates, dt);
         }
@@ -53,13 +53,24 @@ class Stabilisation
     self.esc.v2 = ui.throttle - pidRoll - pidPitch - pidYaw
     self.esc.v3 = ui.throttle + pidRoll - pidPitch + pidYaw
     */
-
+        /*
+        0     1
+         \   /
+          |D|
+         /   \
+        3     2
+        // mixing system of ardupilot
+        */
+        float mixing = 0.5;
         if (isArmed && commands[cmd_throttle] > 1100)
         {
-            motor_command[0] = commands[cmd_throttle] - cmd[pid_roll] + cmd[pid_pitch] - cmd[pid_yaw];
-            motor_command[1] = commands[cmd_throttle] + cmd[pid_roll] + cmd[pid_pitch] + cmd[pid_yaw];
-            motor_command[2] = commands[cmd_throttle] + cmd[pid_roll] - cmd[pid_pitch] - cmd[pid_yaw];
-            motor_command[3] = commands[cmd_throttle] - cmd[pid_roll] - cmd[pid_pitch] + cmd[pid_yaw];
+            motor_command[2] = commands[cmd_throttle] - cmd[pid_roll] * mixing + cmd[pid_pitch] * mixing - cmd[pid_yaw] * mixing; // motor 0
+            motor_command[0] = commands[cmd_throttle] + cmd[pid_roll] * mixing + cmd[pid_pitch] * mixing + cmd[pid_yaw] * mixing; // motor 1
+            motor_command[3] = commands[cmd_throttle] + cmd[pid_roll] * mixing - cmd[pid_pitch] * mixing - cmd[pid_yaw] * mixing; // motor 2
+            motor_command[1] = commands[cmd_throttle] - cmd[pid_roll] * mixing - cmd[pid_pitch] * mixing + cmd[pid_yaw] * mixing; // motor 3
+         
+            motor_command[3] = 0;
+            motor_command[1] = 0;
         }
         else
         {
