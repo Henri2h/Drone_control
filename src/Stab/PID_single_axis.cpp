@@ -36,7 +36,7 @@ class PID_Single_Axis
         }
     }
 
-    float w0Te = 20; // produit de w0Te car w0 = 2*pi*Te
+    float w0Te = 1; // produit de w0Te car w0 = 2*pi*Te
     void doFilter()
     {
         error_d = (error_d_last * w0Te + error_d) / (w0Te + 1);
