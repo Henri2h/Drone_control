@@ -1,25 +1,32 @@
-#include "PID_single_axis.cpp"
-
 class Rate_Controller
 {
-    PID_Single_Axis loop_pitch = PID_Single_Axis();
-    PID_Single_Axis loop_roll = PID_Single_Axis();
+  private:
+    PID_Single_Axis loop_rate_pitch = PID_Single_Axis();
+    PID_Single_Axis loop_rate_roll = PID_Single_Axis();
+    PID_Single_Axis loop_rate_yaw = PID_Single_Axis();
+
     // error
     float error[3] = {0, 0, 0};
+    // Accro mode
+    // 450mm frame, 10x4.5" 2 blades propellers - Tested during flight test: OK
+    float accroSpeedPIDParams[4] = {0.010, 192, 0.0, 0.0};
 
+    // Yaw PID
+    float yawSpeedPIDParams[4] = {0.010, 150.0, 0.0, 0.0}; // G, Kp, Kd, Ki
   public:
     Rate_Controller()
     {
         // setup gains for the controllers
+        loop_rate_pitch.setPID(0.01, 192, 0, 0);
+        loop_rate_roll.setPID(0.01, 192, 0, 0);
+        loop_rate_yaw.setPID(0.01, 150, 0, 0);
     }
 
     void update(float *cmd, float *rates, float dt)
     {
-        for (size_t i = 0; i < 3; i++)
-        {
-            error[i] = (cmd[i] - rates[i]);
-        }
-        float out_pitch = loop_pitch.update(error[pid_pitch], dt);
-        float out_roll = loop_roll.update(error[pid_roll], dt);
+        // inner loop
+        cmd[pid_pitch] = loop_rate_pitch.update(cmd[pid_pitch], rates[pid_pitch], dt);
+        cmd[pid_roll] = loop_rate_roll.update(cmd[pid_roll], rates[pid_roll], dt);
+        cmd[pid_yaw] = loop_rate_yaw.update(cmd[pid_yaw], rates[pid_yaw], dt);
     }
 };

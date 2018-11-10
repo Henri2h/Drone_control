@@ -1,8 +1,9 @@
 #include "../Ref.h"
-
+#include "PID_single_axis.cpp"
 // rate control
 #include "Rate_Controller.cpp"
 #include "Attitude_Controller.cpp"
+#include "math.h"
 
 class Stabilisation
 {
@@ -15,6 +16,11 @@ class Stabilisation
     Attitude_Controller attitude_c = Attitude_Controller();
     Rate_Controller rate_c = Rate_Controller();
 
+    // Reception setup
+    const float MAX_ANGLE = 45;      // (°) Max roll and pitch angles reachable in angle mode
+    const float MAX_ROT_SPEED = 135; // (°/s) Max roll and pitch speed in accro mode
+    const float MAX_YAW_SPEED = 135; // (°/s) Max yaw speed in accro and angle modes
+
   public:
     Stabilisation() {}
 
@@ -23,11 +29,23 @@ class Stabilisation
 
         // commands
         int cmd_raw[3] = {commands[cmd_roll], commands[cmd_pitch], commands[cmd_yaw]};
-        float cmd[3] = {0, 0, 0}; // command mapped
-        // update orders
-        attitude_c.update(cmd, ang, dt);
-        rate_c.update(cmd, rates, dt);
 
+        float cmd[3] = {0, 0, 0}; // command mapped
+        // map values
+        cmd[pid_pitch] = mapValue(cmd_raw[pid_pitch], 1075, 1920, -MAX_ANGLE, MAX_ANGLE);
+        cmd[pid_roll] = mapValue(cmd_raw[pid_roll], 1075, 1920, -MAX_ANGLE, MAX_ANGLE);
+        cmd[pid_yaw] = mapValue(cmd_raw[pid_yaw], 1075, 1920, -MAX_YAW_SPEED, MAX_YAW_SPEED);
+
+        // compute commands
+        // update orders
+        if (1)
+        {
+            attitude_c.update(cmd, ang, rates, dt);
+        }
+        else
+        {
+            rate_c.update(cmd, rates, dt);
+        }
         // motor commands
         /*
     self.esc.v0 = ui.throttle + pidRoll + pidPitch - pidYaw
