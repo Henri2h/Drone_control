@@ -37,8 +37,8 @@ class IMU
     const int y = 1;
     const int z = 2;
 
-    const float kAcc = 0.02;
-    const float kGyr = 0.98;
+    const float kAcc = 0;
+    const float kGyr = 1;
 
     const float g = 9.81;
 
@@ -133,14 +133,6 @@ class IMU
             imu_values[i] -= accOffset[i];
             imu_values[i + ARR_GYRO_POS] -= gyrOffset[i];
         }
-
-        // std::cout << imu_values[0] << " " << imu_values[1] << " " << imu_values[2] << "   |   " << imu_values[3] << " " << imu_values[4] << " " << imu_values[5] << "   |   " << imu_values[6] << " " << imu_values[7] << " " << imu_values[8] << "\n";
-        // convert radian to degrees:
-
-        for (size_t i = ARR_GYRO_POS; i < ARR_GYRO_POS + AXIS_NB && offsetSet; i++)
-        {
-            imu_values[i] *= 180 / PI;
-        }
     }
 
     void setDt(float dt_in)
@@ -150,7 +142,6 @@ class IMU
 
     void getAngleAccel(float *ang)
     {
-     
 
         if (imu_values[z] != 0)
         {
@@ -164,14 +155,13 @@ class IMU
         }
 
         // non trivial rules
-        /*
+        
         if(imu_values[z] <= 0 && imu_values[y] <= 0){ ang[x] -= 180; }
         else if (imu_values[z] <=0 && imu_values[y] > 0){ ang[x] += 180; }
 
         if(imu_values[z] <= 0 && imu_values[x] <= 0){ ang[y] -= 180; }
         else if (imu_values[z] <= 0 && imu_values[x] > 0){ ang[y] += 180; }
-        */
-
+        
     }
 
     void getAcceleration(float *ang)
@@ -204,6 +194,12 @@ class IMU
         for (size_t i = 0; i < 3; i++)
         { // to use gyration
             ang[i] = (ang[i] + imu_values[i + ARR_GYRO_POS] * dt) * kGyr + ang_acc[i] * kAcc;
+            if(false && ang[i] > 180){
+                ang[i] -= 180;
+            }
+            else if (false && ang[i] < -180){
+                ang[i] += 180;
+            }
         }
         return ang;
     }
