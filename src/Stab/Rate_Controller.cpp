@@ -22,11 +22,16 @@ class Rate_Controller
         loop_rate_yaw.setPID(0.01, 150, 0, 0);
     }
 
-    void update(float *cmd, float *rates, float dt)
+    void update(float *cmd, float *rates, float dt, float *pid_debug)
     {
         // inner loop
         cmd[pid_pitch] = loop_rate_pitch.update(cmd[pid_pitch], rates[pid_pitch], dt);
-        cmd[pid_roll] = loop_rate_roll.update(cmd[pid_roll], rates[pid_roll], dt);
+        cmd[pid_roll] = loop_rate_roll.update(cmd[pid_roll], rates[pid_roll], dt, pid_debug);
         cmd[pid_yaw] = loop_rate_yaw.update(cmd[pid_yaw], rates[pid_yaw], dt);
+    }
+
+     void update_pid(float kp_rate, float kd_rate){
+        loop_rate_pitch.setPID(0.01, kp_rate, kd_rate, 0);
+        loop_rate_roll.setPID(0.01, kp_rate, kd_rate, 0);        
     }
 };
