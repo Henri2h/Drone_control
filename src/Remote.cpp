@@ -4,6 +4,7 @@
 #include <thread>
 #include <sstream>
 
+
 using namespace uWS;
 using namespace std;
 
@@ -24,6 +25,7 @@ class Remote
         ws->send(ang_2_str, strlen(ang_2_str), opCode);
         ws->send(time_str, strlen(time_str), opCode);
     }
+    
     static void sendData(WebSocket<SERVER> *ws, int *values, float *time_pointer, OpCode opCode)
     {
         // preparing results :
@@ -38,17 +40,113 @@ class Remote
         ws->send(ang_2_str, strlen(ang_2_str), opCode);
         ws->send(time_str, strlen(time_str), opCode);
     }
-
-    static void start_remote(float *ang_in, float *acceleration_in, float *rates_in, int *pid_in, int *pid_debug_in, int *sensors_in, float *time_now_in)
+    
+    static void sendDataL(WebSocket<SERVER> *ws, int *values, float *time_pointer, int length, OpCode opCode)
     {
+        // preparing results :
+        char const *time_str = to_string(*time_pointer).c_str();
+        for (size_t i = 0; i < length; i++){
+            char const *val_str = to_string(values[i]).c_str();
+            // sending data
+            ws->send(val_str, strlen(val_str), opCode);
+        }
+        ws->send(time_str, strlen(time_str), opCode);
+    }
+
+    static void sendFStatus(WebSocket<SERVER> *ws, float *time_pointer, float *commands, float *gyr, float *acc, float *comp, int *pid, OpCode opCode)
+    {
+        /*
+        0 : time
+        1 : throttle
+        2 : pitch
+        3 : roll
+        4 : yaw
+        5 : gyr x
+        6 : gyr y
+        7 : gyr z
+        8 : acc x
+        9 : acc y
+        10 : acc z
+        11 : comp x
+        12 : comp y
+        13 : comp z
+        14 : pid pitch
+        15 : pid roll
+        16 : pid yaw
+
+        */
+        // preparing results :
+        char const *time_str = to_string(*time_pointer).c_str();
+
+        // command
+        char const *commands_str_0 = to_string(commands[0]).c_str();
+        char const *commands_str_1 = to_string(commands[1]).c_str();
+        char const *commands_str_2 = to_string(commands[2]).c_str();
+        char const *commands_str_3 = to_string(commands[3]).c_str();
+
+        // gyr
+        char const *gyr_str_0 = to_string(gyr[0]).c_str();
+        char const *gyr_str_1 = to_string(gyr[1]).c_str();
+        char const *gyr_str_2 = to_string(gyr[2]).c_str();
+
+        // gyr
+        char const *acc_str_0 = to_string(acc[0]).c_str();
+        char const *acc_str_1 = to_string(acc[1]).c_str();
+        char const *acc_str_2 = to_string(acc[2]).c_str();
+
+        // gyr
+        char const *comp_str_0 = to_string(comp[0]).c_str();
+        char const *comp_str_1 = to_string(comp[1]).c_str();
+        char const *comp_str_2 = to_string(comp[2]).c_str();
+
+        // pid
+        char const *pid_str_0 = to_string(pid[0]).c_str();
+        char const *pid_str_1 = to_string(pid[1]).c_str();
+        char const *pid_str_2 = to_string(pid[2]).c_str();
+
+        // sending data
+        ws->send(time_str, strlen(time_str), opCode); // time
+
+        // commands
+        ws->send(commands_str_0, strlen(commands_str_0), opCode);
+        ws->send(commands_str_1, strlen(commands_str_1), opCode);
+        ws->send(commands_str_2, strlen(commands_str_2), opCode);
+        ws->send(commands_str_3, strlen(commands_str_3), opCode);
+
+        // gyr
+        ws->send(gyr_str_0, strlen(gyr_str_0), opCode);
+        ws->send(gyr_str_1, strlen(gyr_str_1), opCode);
+        ws->send(gyr_str_2, strlen(gyr_str_2), opCode);
+
+        // acc
+        ws->send(acc_str_0, strlen(acc_str_0), opCode);
+        ws->send(acc_str_1, strlen(acc_str_1), opCode);
+        ws->send(acc_str_2, strlen(acc_str_2), opCode);
+
+        // comp
+        ws->send(comp_str_0, strlen(comp_str_0), opCode);
+        ws->send(comp_str_1, strlen(comp_str_1), opCode);
+        ws->send(comp_str_2, strlen(comp_str_2), opCode);
+
+        // comp
+        ws->send(pid_str_0, strlen(pid_str_0), opCode);
+        ws->send(pid_str_1, strlen(pid_str_1), opCode);
+        ws->send(pid_str_2, strlen(pid_str_2), opCode);
+    }
+
+    static void start_remote(float *commands_in, float *ang_in, float *acceleration_in, float *rates_in, int *pid_in, float *pid_debug_in, int *sensors_in, int *status_in, int * orders_in, float *time_now_in)
+    {
+        static float *commands = commands_in;
         static float *time_pointer = time_now_in;
         static float *ang = ang_in;
         static int *pid = pid_in;
-        static int *pid_debug = pid_debug_in;
+        static float *pid_debug = pid_debug_in; // not used
         static int *sensors = sensors_in;
 
         static float *acceleration = acceleration_in;
         static float *rates = rates_in;
+        static int *orders = orders_in;
+        static int *status = status_in;
 
         printf("[ REMOTE ] : Started\n");
         Hub h;
@@ -67,6 +165,7 @@ class Remote
                 if (r.compare("#AngComp") == 0)
                 {
                     // preparing results :
+
                     sendData(ws, ang, time_pointer, opCode);
                 }
 
@@ -87,9 +186,49 @@ class Remote
                 {
                     sendData(ws, rates, time_pointer, opCode);
                 }
+                else if (r.compare("#FStatus") == 0)
+                {
+                    sendFStatus(ws, time_pointer, commands, rates, acceleration, ang, pid, opCode);
+                }
+                else if (r.compare("#Status") == 0)
+                {
+                    sendDataL(ws, status, time_pointer, 10,  opCode);
+                }
+                else if (r.compare("#ListFiles") == 0){
+                    // nothing
+                    std::cout << "#ListFiles\n";
+                }
+                else if (r.compare("#OrdRecordOn") == 0){
+                    // nothing
+                    std::cout << "OrdRecordOn\n";
+                    orders[0] = 1;
+                    ws->send("OK", 2, opCode);
+                }
+                 else if (r.compare("#OrdRecordOff") == 0){
+                    // nothing
+                    std::cout << "OrdRecordOff\n";
+                    orders[0] = 0;
+                    ws->send("OK", 2, opCode);
+                }
+
+
+// DK : display gains
+                else if (r.compare("#OrdDKOn") == 0){
+                    // nothing
+                    orders[1] = 1;
+                    ws->send("OK", 2, opCode);
+                }
+                 else if (r.compare("#OrdDKOff") == 0){
+                    // nothing
+                    orders[orders_DisplayGains] = 0;
+                    ws->send("OK", 2, opCode);
+                }
+
+
                 else
                 {
                     std::cout << "[ Remote ] : command unknown : " << r << "\n";
+                    ws->send("KO", 2, opCode);
                 }
             }
         });
@@ -104,8 +243,8 @@ class Remote
 
   public:
     std::thread first;
-    void launch(float *ang, float *acceleration, float *rates, int *pid, int *pid_debug, int *sensors, float *time_now)
+    void launch(float *commands_in, float *ang, float *acceleration, float *rates, int *pid, float *pid_debug, int *sensors, int *status, int *orders, float *time_now)
     {
-        first = std::thread(start_remote, ang, acceleration, rates, pid, pid_debug, sensors, time_now);
+        first = std::thread(start_remote, commands_in, ang, acceleration, rates, pid, pid_debug, sensors, status, orders, time_now);
     }
 };
