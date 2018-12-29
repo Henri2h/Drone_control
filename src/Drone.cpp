@@ -8,11 +8,13 @@ Drone control
 #include <unistd.h>
 #include <memory>
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #include <ctime>
 #include <chrono>
 #include <math.h>
+
 
 #include "RCInputManager.cpp"
 #include "ServoManager.cpp"
@@ -23,12 +25,15 @@ Drone control
 
 #include "Ref.h"
 
+#define LOGNAME_FORMAT "log/data_%Y%m%d_%H%M%S.csv"
+#define LOGNAME_SIZE 32
+
 using namespace std;
 
 typedef std::chrono::high_resolution_clock TimeM;
 
 int i = 0;
-string version = "0.1.4";
+string version = "0.1.6";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
@@ -49,22 +54,65 @@ float acceleration[3] = {0, 0, 0};
 float rates[3] = {0, 0, 0};
 
 int commands[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+float commands_gen[4] = {0, 0, 0, 0}; // to have an idea of what commands we send to the control algorithm, in ° or in °/s
 
 // remote
 int pid_out[3] = {0, 0, 0};
-int pid_debug[3] = {0, 0, 0};
+float pid_debug[3] = {0, 0, 0};
 
 float motors[4] = {0, 0, 0, 0};
 int motors_output[4] = {0, 0, 0, 0};
 int sensors[2] = {0, 0}; // pressure, temperature
 int frequency_crtl[] = {0, 0};
 
+// safety
 bool isArmed = false;
 bool isArming = false;
+int stabilisation_mode = 0; // rates = 0, angle = 1
+    //float cmd[3] = {0, 0, 0};   // command mapped
 
+// saving
+
+bool runSaving = false;
+int orders [10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int status [10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
+/* status array definition
+0 :
+1 :
+
+// GPS 
+2 : Latitude
+3 : Longitude
+4 : Heigh
+
+// Pressure and temperature
+5 : Pressure
+6 : Temperature
+*/
 // time
 auto arming_t_started = TimeM::now();
 
+// adding a status save system : ease dvpt
+void updateStatus(){
+    if(runSaving)
+    {  status[0] = 1;
+    }
+    else{
+        status[0] = 0;
+    }
+    
+    }
+
+void updateOrders(){
+    if(orders[0] == 1){runSaving = true;}
+    else {runSaving = false;}
+
+    if(orders[1] == 1){stab.showGains = true;}
+    else{stab.showGains = false;}
+   }
+
+
+void listFiles(){}
 void safety()
 {
     //cout << "throttle : " << commands[cmd_throttle] << " arming : " << commands[cmd_arming] <<  "\n";
@@ -120,7 +168,7 @@ void setup()
 
     // launch remote
 
-    remote.launch(ang, acceleration, rates, pid_out, pid_debug, sensors, &t);
+    remote.launch(commands_gen, ang, acceleration, rates, pid_out, pid_debug, sensors, status, orders, &t);
 
     led.setOK();
 }
@@ -155,9 +203,12 @@ void loop()
     imu.getAcceleration(acceleration);
 
     // stabilize
-    stab.Stabilize(motors_output, isArmed, commands, ang, rates, dt);
+    stab.Stabilize(&stabilisation_mode, commands_gen, motors_output, isArmed, commands, ang, rates, dt, pid_debug);
     servo.setDuty(motors_output);
     i++;
+
+    // led display
+    led.update();
 
     // display frequency
     int r = 900;
@@ -176,6 +227,57 @@ void loop()
     }
 }
 
+int isFileOpen = false;
+ofstream myfile;
+
+void saveData(bool save)
+{
+    string sep = ",";
+    if (save && isFileOpen == false)
+    {
+        std::cout << "[ FileSaving ] : going to save\n";
+        // open file
+        static char name[LOGNAME_SIZE];
+        time_t now = time(0);
+        strftime(name, sizeof(name), LOGNAME_FORMAT, localtime(&now));
+        myfile.open(name);
+
+        isFileOpen = true;
+
+        myfile << "t" << sep
+               << "stabilisation mode" << sep
+               << "commands_gen[0]" << sep << "commands_gen[1]" << sep << "commands_gen[2]" << sep << "commands_gen[3]" << sep
+               << "rates[0]" << sep << "rates[1]" << sep << "rates[2]" << sep
+               << "acceleration[0]" << sep << "acceleration[1]" << sep << "acceleration[2]" << sep
+               << "ang[0]" << sep << "ang[1]" << sep << "ang[2]" << sep
+               << "pid_out[0]" << sep << "pid_out[1]" << sep << "pid_out[2]"
+               << "\n";
+
+               
+    }
+
+    if(save){
+    // save data in a csv format
+    myfile << t << sep
+           << stabilisation_mode << sep
+           << commands_gen[0] << sep << commands_gen[1] << sep << commands_gen[2] << sep << commands_gen[3] << sep
+           << rates[0] << sep << rates[1] << sep << rates[2] << sep
+           << acceleration[0] << sep << acceleration[1] << sep << acceleration[2] << sep
+           << ang[0] << sep << ang[1] << sep << ang[2] << sep
+           << pid_debug[0] << sep << pid_debug[1] << sep << pid_debug[2]
+           << "\n";
+    }
+
+    if (save == false && isFileOpen)
+    {
+        std::cout << "[ FileSaving ] : file saving ended\n";
+        isFileOpen = false;
+        myfile.close();
+    }
+}
+
+
+
 auto last_call = TimeM::now();
 bool useTimer = true;
 int main(int argc, char *argv[])
@@ -192,6 +294,7 @@ int main(int argc, char *argv[])
     // loop
     while (true)
     {
+        // waiting
         if (useTimer)
         {
             last_call += chrono::nanoseconds(f_dt_n);
@@ -211,5 +314,10 @@ int main(int argc, char *argv[])
 
         // call loop
         loop();
+        updateOrders();
+        updateStatus();
+        
+        saveData(runSaving);
+        
     }
 }
