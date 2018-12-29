@@ -11,13 +11,11 @@ class PID_Single_Axis
     float error_i = 0;
 
     float error_p_last = 0;
-    float error_d_last = 0;
-    float error_i_last = 0;
 
     float Kp = 0;
     float Kd = 0;
     float Ki = 0;
-    float G = 1;
+    float G = 5;
     float last_time = 0;
 
     int max_integral = 100;
@@ -39,8 +37,10 @@ class PID_Single_Axis
     float w0Te = 1; // produit de w0Te car w0 = 2*pi*Te
     void doFilter()
     {
+        float error_d_last = 0;
         error_d = (error_d_last * w0Te + error_d) / (w0Te + 1);
-
+        
+        // apply a windup on derivative filter to prevent excesive reaction
         if (error_d > max_integral)
         {
             error_d = max_integral;
@@ -64,6 +64,7 @@ class PID_Single_Axis
     }
     void setPID(float in_G, float in_Kp, float in_Kd, float in_Ki)
     {
+        /// G, Kp, Kd, Ki
         G = in_G;
         Ki = in_Ki;
         Kp = in_Kp;
@@ -84,28 +85,44 @@ class PID_Single_Axis
         //  Ki[1] = mapValue(ki, 1000, 2000, 0, 100);
     }
 
+    float update(float command, float feedback, float dt, float *pid_debug)
+    {
+        float output = 0;
+
+        error_p = command - feedback;
+        error_d = (error_p - error_p_last) / dt;
+        error_i += error_p * dt;
+
+        //integralWindup();  // integral windup of i term
+      //  doFilter(); // filter in derrivative term
+
+        error_p_last = error_p;
+
+        pid_debug[0] = G * Kp * error_p;
+        pid_debug[1] = G * Kd * error_d;
+        pid_debug[2] = G * Ki * error_i;
+
+        output = G * (Kp * error_p) + (Kd * error_d) + (Ki * error_i);
+        return output;
+    }
+
     float update(float command, float feedback, float dt)
     {
         float output = 0;
 
         error_p = command - feedback;
-        // error_d[i] = (error_p[i] - error_p_last[i]) / dt;
-        error_d = (-error_p_last) / dt;
+        error_d = (error_p - error_p_last) / dt;
         error_i += error_p * dt;
-        // cout << "i : " << i << " : " << mapValue(commands[i], 1000, 2000, -30, 30) << " error : " << error_p[i] << " ";
 
-        //        cout << "\n";
-
-        integralWindup();
-        doFilter();
+        //integralWindup();  // integral windup of i term
+      //  doFilter(); // filter in derrivative term
 
         error_p_last = error_p;
-        error_d_last = error_d;
-        error_i_last = error_i;
 
         output = G * (Kp * error_p) + (Kd * error_d) + (Ki * error_i);
         return output;
     }
+
     void displayK()
     {
         cout << "kp : " << Kp << " " << Kd << " " << Ki << "\n";
