@@ -1,21 +1,27 @@
 #include <dirent.h>
+#include <sstream>
 
-class FileManagement{
-    public:
- static void listDir(const char * list){
-    
+class FileManagement
+{
+  public:
+    static std::string listDir(const char *list)
+    {
 
-    DIR *d;
-    
-    struct dirent *dir;
-    d = opendir(list);
+        std::stringstream ss;
+        DIR *d;
 
-if(d){
-    while((dir=readdir(d)) != NULL){
- cout << "[ DIR ] : " << dir->d_name << "\n";   
+        struct dirent *dir;
+        d = opendir(list);
+
+        if (d)
+        {
+            while ((dir = readdir(d)) != NULL)
+            {
+                ss << dir->d_name << ", ";
+            }
+        }
+        closedir(d);
+
+        return ss.str();
     }
-}
-closedir(d);
-
-
-}};
+};
