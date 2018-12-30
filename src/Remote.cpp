@@ -193,7 +193,7 @@ class Remote
                 }
                 else if (r.compare("#Status") == 0)
                 {
-                    sendDataL(ws, status, time_pointer, 10, opCode);
+                    sendDataL(ws, status, time_pointer, status_length, opCode);
                 }
                 else if (r.compare("#ListFiles") == 0)
                 {
@@ -259,7 +259,7 @@ class Remote
 
   public:
     std::thread first;
-    void launch(float *commands_in, float *ang, float *acceleration, float *rates, int *pid, float *pid_debug, int *sensors, int *status, int *orders, float *time_now)
+    void launch(float *commands_in, float *ang, float *acceleration, float *rates, int *pid, float *pid_debug, int *sensors, float *status, int *orders, float *time_now)
     {
         first = std::thread(start_remote, commands_in, ang, acceleration, rates, pid, pid_debug, sensors, status, orders, time_now);
     }
