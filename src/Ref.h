@@ -22,7 +22,18 @@
 
 
 #define status_Saving 0
-#define statuse_DisplayGains 1
+#define status_DisplayGains 1
+#define status_gps_fix 2
+#define status_gps_get_fix 3
+#define status_gps_latitude 4
+#define status_gps_longitude 5
+#define status_gps_height 6
+#define status_gps_h_accuracy 7
+#define status_gps_v_accuracy 8
+#define status_baro_pressure 9
+#define status_baro_temperature 10
+// number of items
+#define status_length 12
 
 #define order_Saving 0
 #define orders_DisplayGains 1
