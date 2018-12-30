@@ -75,7 +75,7 @@ int stabilisation_mode = 0; // rates = 0, angle = 1
 
 bool runSaving = false;
 int orders [10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-int status [10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
+float status [10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
 /* status array definition
 0 :
 1 :

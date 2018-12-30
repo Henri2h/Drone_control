@@ -41,7 +41,7 @@ class Remote
         ws->send(time_str, strlen(time_str), opCode);
     }
 
-    static void sendDataL(WebSocket<SERVER> *ws, int *values, float *time_pointer, int length, OpCode opCode)
+    static void sendDataL(WebSocket<SERVER> *ws, float *values, float *time_pointer, int length, OpCode opCode)
     {
         // preparing results :
         char const *time_str = to_string(*time_pointer).c_str();
@@ -135,7 +135,7 @@ class Remote
         ws->send(pid_str_2, strlen(pid_str_2), opCode);
     }
 
-    static void start_remote(float *commands_in, float *ang_in, float *acceleration_in, float *rates_in, int *pid_in, float *pid_debug_in, int *sensors_in, int *status_in, int *orders_in, float *time_now_in)
+    static void start_remote(float *commands_in, float *ang_in, float *acceleration_in, float *rates_in, int *pid_in, float *pid_debug_in, int *sensors_in, float *status_in, int *orders_in, float *time_now_in)
     {
         static float *commands = commands_in;
         static float *time_pointer = time_now_in;
@@ -147,7 +147,7 @@ class Remote
         static float *acceleration = acceleration_in;
         static float *rates = rates_in;
         static int *orders = orders_in;
-        static int *status = status_in;
+        static float *status = status_in;
 
         printf("[ REMOTE ] : Started\n");
         Hub h;
