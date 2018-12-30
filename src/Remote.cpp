@@ -3,7 +3,7 @@
 #include <cmath>
 #include <thread>
 #include <sstream>
-
+#include "FileManagement.cpp"
 
 using namespace uWS;
 using namespace std;
@@ -25,7 +25,7 @@ class Remote
         ws->send(ang_2_str, strlen(ang_2_str), opCode);
         ws->send(time_str, strlen(time_str), opCode);
     }
-    
+
     static void sendData(WebSocket<SERVER> *ws, int *values, float *time_pointer, OpCode opCode)
     {
         // preparing results :
@@ -40,12 +40,13 @@ class Remote
         ws->send(ang_2_str, strlen(ang_2_str), opCode);
         ws->send(time_str, strlen(time_str), opCode);
     }
-    
+
     static void sendDataL(WebSocket<SERVER> *ws, int *values, float *time_pointer, int length, OpCode opCode)
     {
         // preparing results :
         char const *time_str = to_string(*time_pointer).c_str();
-        for (size_t i = 0; i < length; i++){
+        for (size_t i = 0; i < length; i++)
+        {
             char const *val_str = to_string(values[i]).c_str();
             // sending data
             ws->send(val_str, strlen(val_str), opCode);
@@ -134,7 +135,7 @@ class Remote
         ws->send(pid_str_2, strlen(pid_str_2), opCode);
     }
 
-    static void start_remote(float *commands_in, float *ang_in, float *acceleration_in, float *rates_in, int *pid_in, float *pid_debug_in, int *sensors_in, int *status_in, int * orders_in, float *time_now_in)
+    static void start_remote(float *commands_in, float *ang_in, float *acceleration_in, float *rates_in, int *pid_in, float *pid_debug_in, int *sensors_in, int *status_in, int *orders_in, float *time_now_in)
     {
         static float *commands = commands_in;
         static float *time_pointer = time_now_in;
@@ -192,38 +193,53 @@ class Remote
                 }
                 else if (r.compare("#Status") == 0)
                 {
-                    sendDataL(ws, status, time_pointer, 10,  opCode);
+                    sendDataL(ws, status, time_pointer, 10, opCode);
                 }
-                else if (r.compare("#ListFiles") == 0){
+                else if (r.compare("#ListFiles") == 0)
+                {
                     // nothing
                     std::cout << "#ListFiles\n";
                 }
-                else if (r.compare("#OrdRecordOn") == 0){
+                else if (r.compare("#OrdRecordOn") == 0)
+                {
                     // nothing
                     std::cout << "OrdRecordOn\n";
                     orders[0] = 1;
                     ws->send("OK", 2, opCode);
                 }
-                 else if (r.compare("#OrdRecordOff") == 0){
+                else if (r.compare("#OrdRecordOff") == 0)
+                {
                     // nothing
                     std::cout << "OrdRecordOff\n";
                     orders[0] = 0;
                     ws->send("OK", 2, opCode);
                 }
 
-
-// DK : display gains
-                else if (r.compare("#OrdDKOn") == 0){
+                // DK : display gains
+                else if (r.compare("#OrdDKOn") == 0)
+                {
                     // nothing
                     orders[1] = 1;
                     ws->send("OK", 2, opCode);
                 }
-                 else if (r.compare("#OrdDKOff") == 0){
+                else if (r.compare("#OrdDKOff") == 0)
+                {
                     // nothing
                     orders[orders_DisplayGains] = 0;
                     ws->send("OK", 2, opCode);
                 }
 
+                // File Management :
+                else if (r.compare("#FL"))
+                { // FL : FileList
+                    std::string strlist = FileManagement::listDir("log");
+
+                    char const *data = strlist.c_str();
+                    ws->send(data, strlen(data), opCode);
+                }
+                else if (r.compare("#FS"))
+                { // FL : FileSend
+                }
 
                 else
                 {
