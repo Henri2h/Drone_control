@@ -33,7 +33,7 @@ using namespace std;
 typedef std::chrono::high_resolution_clock TimeM;
 
 int i = 0;
-string version = "0.1.6";
+string version = "0.1.7";
 
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
