@@ -21,6 +21,7 @@
 #define rates_yaw 2
 
 
+// status
 #define status_Saving 0
 #define status_DisplayGains 1
 #define status_gps_fix 2
@@ -32,8 +33,9 @@
 #define status_gps_v_accuracy 8
 #define status_baro_pressure 9
 #define status_baro_temperature 10
+
 // number of items
-#define status_length 12
+#define status_length 14
 
 #define order_Saving 0
 #define orders_DisplayGains 1
