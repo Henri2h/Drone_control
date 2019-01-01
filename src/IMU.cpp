@@ -44,6 +44,22 @@ class IMU
 
     float imu_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+    float accel_old[3] = {0, 0, 0};
+    float rates_old[3] = {0, 0, 0};
+    float w0Te = 1;
+    int filterUsage = 3;
+    /*
+    0 : no
+    1 : acceleration
+    2 : gyration
+    3 : both
+    */
+    float doFilter(float value, float last_value)
+    {
+        value = (last_value * w0Te + value) / (w0Te + 1);
+        return value;
+    }
+
     std::unique_ptr<InertialSensor> get_inertial_sensor(std::string sensor_name)
     {
         if (sensor_name == "mpu")
@@ -76,7 +92,7 @@ class IMU
             accOffset[i] = 0;
         }
 
-        int samples = 900;
+        int samples = 900 * 4;
 
         for (size_t i = 0; i < samples; i++) // add all the samples
         {
@@ -88,7 +104,7 @@ class IMU
             }
             accOffset[z] -= g;
 
-            usleep(50);
+            usleep(500);
         }
 
         std::cout << "[ IMU ] : offsets : \n";
@@ -132,6 +148,17 @@ class IMU
         {
             imu_values[i] -= accOffset[i];
             imu_values[i + ARR_GYRO_POS] -= gyrOffset[i];
+
+            if (filterUsage == 2 || filterUsage == 3)
+            {
+                imu_values[i + ARR_GYRO_POS] = doFilter(imu_values[i + ARR_GYRO_POS], rates_old[i]);
+                rates_old[i] = imu_values[i + ARR_GYRO_POS];
+            }
+            if (filterUsage == 1 || filterUsage == 3)
+            {
+                imu_values[i] = doFilter(imu_values[i], accel_old[i]);
+                accel_old[i] = imu_values[i];
+            }
         }
     }
 
@@ -155,13 +182,24 @@ class IMU
         }
 
         // non trivial rules
-        
-        if(imu_values[z] <= 0 && imu_values[y] <= 0){ ang[x] -= 180; }
-        else if (imu_values[z] <=0 && imu_values[y] > 0){ ang[x] += 180; }
 
-        if(imu_values[z] <= 0 && imu_values[x] <= 0){ ang[y] -= 180; }
-        else if (imu_values[z] <= 0 && imu_values[x] > 0){ ang[y] += 180; }
-        
+        if (imu_values[z] <= 0 && imu_values[y] <= 0)
+        {
+            ang[x] -= 180;
+        }
+        else if (imu_values[z] <= 0 && imu_values[y] > 0)
+        {
+            ang[x] += 180;
+        }
+
+        if (imu_values[z] <= 0 && imu_values[x] <= 0)
+        {
+            ang[y] -= 180;
+        }
+        else if (imu_values[z] <= 0 && imu_values[x] > 0)
+        {
+            ang[y] += 180;
+        }
     }
 
     void getAcceleration(float *ang)
@@ -194,13 +232,20 @@ class IMU
         for (size_t i = 0; i < 3; i++)
         { // to use gyration
             ang[i] = (ang[i] + imu_values[i + ARR_GYRO_POS] * dt) * kGyr + ang_acc[i] * kAcc;
-            if(false && ang[i] > 180){
+            if (false && ang[i] > 180)
+            {
                 ang[i] -= 180;
             }
-            else if (false && ang[i] < -180){
+            else if (false && ang[i] < -180)
+            {
                 ang[i] += 180;
             }
         }
         return ang;
+    }
+
+    void setFilterUsage(int usage)
+    {
+        filterUsage = usage;
     }
 };
