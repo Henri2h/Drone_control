@@ -35,10 +35,11 @@ typedef std::chrono::high_resolution_clock TimeM;
 int i = 0;
 string version = "0.1.7";
 
+
+LEDManager led = LEDManager();
 RCInputManager rc = RCInputManager();
 ServoManager servo = ServoManager();
 IMU imu = IMU();
-LEDManager led = LEDManager();
 Remote remote = Remote();
 Stabilisation stab = Stabilisation();
 SensorManager sMana = SensorManager();
@@ -67,6 +68,9 @@ int sensors[2] = {0, 0}; // pressure, temperature
 int frequency_crtl[] = {0, 0};
 
 // safety
+bool flag_error = false;
+bool flag_not_ready = true; // boot with this flag enabled
+
 bool isArmed = false;
 bool isArming = false;
 int stabilisation_mode = 0; // rates = 0, angle = 1
@@ -76,19 +80,7 @@ int stabilisation_mode = 0; // rates = 0, angle = 1
 
 int orders[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 double status[status_length];
-/* status array definition
-0 : saving data
-1 :
-
-// GPS 
-2 : Latitude
-3 : Longitude
-4 : Heigh
-
-// Pressure and temperature
-5 : Pressure
-6 : Temperature
-*/
+// status array definition : see Ref.h
 // time
 auto arming_t_started = TimeM::now();
 
@@ -118,7 +110,6 @@ void updateOrders()
     }
 }
 
-void listFiles() {}
 void safety()
 {
     //cout << "throttle : " << commands[cmd_throttle] << " arming : " << commands[cmd_arming] <<  "\n";
@@ -146,7 +137,7 @@ void safety()
         {
             isArmed = false;
             isArming = false;
-            led.setOK();
+            led.backToPrevious();            
         }
     }
 }
@@ -172,6 +163,8 @@ void setup()
     printf("[ MAIN ] : Setup \n");
     servo.initialize();
 
+    stab.initialize(status);
+
     // start sensorManager
     sMana.startThread(status);
 
@@ -179,10 +172,10 @@ void setup()
 
     remote.launch(commands_gen, ang, acceleration, rates, pid_out, pid_debug, sensors, status, orders, &t);
 
-    led.setOK();
-
     // set saving
     status[status_Saving] = 0;
+    flag_not_ready = false; // now the quadcopter is ready !!!
+    led.setOK();
 }
 
 void loop()
@@ -206,7 +199,7 @@ void loop()
     // update imu
     imu.setDt(dt); // update dt
 
-    // safety :
+    // safety check :
     safety();
 
     // angles
@@ -223,7 +216,7 @@ void loop()
     led.update();
 
     // display frequency
-    int r = 900;
+    int r = 1800;
     if (i % r == 0)
     {
 
@@ -234,8 +227,6 @@ void loop()
         cout << "f : " << f << "Hz "
              << "\n";
         last = now;
-
-        //        pid.displayK();
     }
 }
 
