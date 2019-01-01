@@ -24,6 +24,8 @@
 // status
 #define status_Saving 0
 #define status_DisplayGains 1
+
+//gps
 #define status_gps_fix 2
 #define status_gps_get_fix 3
 #define status_gps_latitude 4
@@ -31,8 +33,16 @@
 #define status_gps_height 6
 #define status_gps_h_accuracy 7
 #define status_gps_v_accuracy 8
+
+// baro
 #define status_baro_pressure 9
 #define status_baro_temperature 10
+
+// gains
+#define status_stab_mode 11
+#define status_gains_atti_kp 12
+#define status_gains_rate_kp 13
+#define status_gains_rate_kd 14
 
 // number of items
 #define status_length 14

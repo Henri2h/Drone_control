@@ -47,15 +47,20 @@ class Stabilisation
     }
     int iter = 0;
     int itermode = 0; // 0 croissant, 1 décroissant
+    double * status;
   public:
   bool showGains = false;
-    Stabilisation() {}
+    void initialize(double * status) {
+        this->status = status;
+    }
+    
     int i = 0;
     int *Stabilize(int *stabilisation_mode, float *entree, int *motor_command, bool isArmed, int *commands, float *ang, float *rates, float dt, float *pid_debug)
     {
         iter++;
         i++;
         getStabilisationMode(commands, stabilisation_mode);
+        status[status_stab_mode] = *stabilisation_mode;
 
         // commands
         int cmd_raw[3] = {commands[cmd_pitch], commands[cmd_roll], commands[cmd_yaw]};
@@ -83,6 +88,10 @@ class Stabilisation
                 i = 0;
                 std::cout << "kp_atti : " << kp_atti << " kp_rate : " << kp_rate << " kd_rate : " << kd_rate << "\n";
             }
+
+            status[status_gains_atti_kp] = kp_atti;
+            status[status_gains_rate_kp] = kp_rate;
+            status[status_gains_rate_kd] = kd_rate;
 
             attitude_c.update_pid(kp_atti, kp_rate, kd_rate);
             attitude_c.update(cmd, ang, rates, dt, pid_debug);
@@ -139,6 +148,9 @@ class Stabilisation
             // fix values
             float kp_rate = mapValue(commands[cmd_kp], 922, 2077, 0, rate_max);
             float kd_rate = mapValue(commands[cmd_ki], 921, 2077, 0, 2);
+
+            status[status_gains_rate_kp] = kp_rate;
+            status[status_gains_rate_kd] = kd_rate;
 
             rate_c.update_pid(kp_rate, kd_rate);
             rate_c.update(cmd, rates, dt, pid_debug);
