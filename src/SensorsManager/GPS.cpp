@@ -9,10 +9,10 @@ class GPS
     // create ublox class instance
     Ublox gps;
     bool ready = false;
-    float *status;
+    double *status;
 
   public:
-    void initialize(float *status)
+    void initialize(double *status)
     {
         this->status = status;
         if (gps.testConnection())

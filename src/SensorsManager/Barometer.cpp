@@ -5,11 +5,11 @@
 
 class Barometer
 {
-    float *status;
+    double *status;
     MS5611 barometer;
 
   public:
-    void initialize(float *status)
+    void initialize(double *status)
     {
         this->status = status;
 
@@ -29,6 +29,6 @@ class Barometer
         barometer.calculatePressureAndTemperature();
 
         status[status_baro_pressure] = barometer.getPressure();
-        status[status_baro_temperature] = barometer.getPressure();
+        status[status_baro_temperature] = barometer.getTemperature();
     }
 };

@@ -41,15 +41,16 @@ class Remote
         ws->send(time_str, strlen(time_str), opCode);
     }
 
-    static void sendDataL(WebSocket<SERVER> *ws, float *values, float *time_pointer, int length, OpCode opCode)
+    static void sendDataL(WebSocket<SERVER> *ws, double *values, float *time_pointer, int length, OpCode opCode)
     {
         // preparing results :
         char const *time_str = to_string(*time_pointer).c_str();
         for (size_t i = 0; i < length; i++)
         {
-            char const *val_str = to_string(values[i]).c_str();
+            char charray[14]; // warning : max 14 characters !!!!!
+            sprintf(charray, "%f", values[i]);
             // sending data
-            ws->send(val_str, strlen(val_str), opCode);
+            ws->send(charray, strlen(charray), opCode);
         }
         ws->send(time_str, strlen(time_str), opCode);
     }
@@ -135,7 +136,7 @@ class Remote
         ws->send(pid_str_2, strlen(pid_str_2), opCode);
     }
 
-    static void start_remote(float *commands_in, float *ang_in, float *acceleration_in, float *rates_in, int *pid_in, float *pid_debug_in, int *sensors_in, float *status_in, int *orders_in, float *time_now_in)
+    static void start_remote(float *commands_in, float *ang_in, float *acceleration_in, float *rates_in, int *pid_in, float *pid_debug_in, int *sensors_in, double *status_in, int *orders_in, float *time_now_in)
     {
         static float *commands = commands_in;
         static float *time_pointer = time_now_in;
@@ -147,7 +148,7 @@ class Remote
         static float *acceleration = acceleration_in;
         static float *rates = rates_in;
         static int *orders = orders_in;
-        static float *status = status_in;
+        static double *status = status_in;
 
         printf("[ REMOTE ] : Started\n");
         Hub h;
@@ -233,10 +234,10 @@ class Remote
                 else if (r.compare("#FL"))
                 { // FL : FileList
                     std::string strlist = FileManagement::listDir("log");
-
                     char const *data = strlist.c_str();
                     ws->send(data, strlen(data), opCode);
                 }
+
                 else if (r.compare("#FS"))
                 { // FL : FileSend
                 }
@@ -259,7 +260,7 @@ class Remote
 
   public:
     std::thread first;
-    void launch(float *commands_in, float *ang, float *acceleration, float *rates, int *pid, float *pid_debug, int *sensors, float *status, int *orders, float *time_now)
+    void launch(float *commands_in, float *ang, float *acceleration, float *rates, int *pid, float *pid_debug, int *sensors, double *status, int *orders, float *time_now)
     {
         first = std::thread(start_remote, commands_in, ang, acceleration, rates, pid, pid_debug, sensors, status, orders, time_now);
     }
