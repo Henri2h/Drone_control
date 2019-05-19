@@ -37,12 +37,16 @@ chrt -f -p 99 PID
 #include "AHRS.hpp"
 
 #define G_SI 9.80665
-#define PI   3.14159
+#define PI 3.14159
 
-AHRS::AHRS(std::unique_ptr <InertialSensor> imu)
+AHRS::AHRS(std::unique_ptr<InertialSensor> imu)
 {
     sensor = move(imu);
-    q0 = 1; q1 = 0; q2 = 0, q3 = 0; twoKi = 0; twoKp =2;
+    q0 = 1;
+    q1 = 0;
+    q2 = 0, q3 = 0;
+    twoKi = 0;
+    twoKp = 2;
 }
 void AHRS::update(float dt)
 {
@@ -58,19 +62,20 @@ void AHRS::update(float dt)
     float mx, my, mz;
 
     sensor->update();
-        sensor->read_accelerometer(&ax, &ay, &az);
-        sensor->read_gyroscope(&gx, &gy, &gz);
-        sensor->read_magnetometer(&mx, &my, &mz);
-
+    sensor->read_accelerometer(&ax, &ay, &az);
+    sensor->read_gyroscope(&gx, &gy, &gz);
+    sensor->read_magnetometer(&mx, &my, &mz);
 
     // Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
-    if((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f)) {
+    if ((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f))
+    {
         updateIMU(dt);
         return;
     }
 
     // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-    if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+    if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
+    {
 
         // Normalise accelerometer measurement
         recipNorm = invSqrt(ax * ax + ay * ay + az * az);
@@ -116,16 +121,18 @@ void AHRS::update(float dt)
         halfez = (ax * halfvy - ay * halfvx) + (mx * halfwy - my * halfwx);
 
         // Compute and apply integral feedback if enabled
-        if(twoKi > 0.0f) {
-            integralFBx += twoKi * halfex * dt;	// integral error scaled by Ki
+        if (twoKi > 0.0f)
+        {
+            integralFBx += twoKi * halfex * dt; // integral error scaled by Ki
             integralFBy += twoKi * halfey * dt;
             integralFBz += twoKi * halfez * dt;
-            gx += integralFBx;	// apply integral feedback
+            gx += integralFBx; // apply integral feedback
             gy += integralFBy;
             gz += integralFBz;
         }
-        else {
-            integralFBx = 0.0f;	// prevent integral windup
+        else
+        {
+            integralFBx = 0.0f; // prevent integral windup
             integralFBy = 0.0f;
             integralFBz = 0.0f;
         }
@@ -137,7 +144,7 @@ void AHRS::update(float dt)
     }
 
     // Integrate rate of change of quaternion
-    gx *= (0.5f * dt);		// pre-multiply common factors
+    gx *= (0.5f * dt); // pre-multiply common factors
     gy *= (0.5f * dt);
     gz *= (0.5f * dt);
     qa = q0;
@@ -183,7 +190,8 @@ void AHRS::updateIMU(float dt)
     gz -= gyroOffset[2];
 
     // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-    if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+    if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
+    {
 
         // Normalise accelerometer measurement
         recipNorm = invSqrt(ax * ax + ay * ay + az * az);
@@ -202,16 +210,18 @@ void AHRS::updateIMU(float dt)
         halfez = (ax * halfvy - ay * halfvx);
 
         // Compute and apply integral feedback if enabled
-        if(twoKi > 0.0f) {
-            integralFBx += twoKi * halfex * dt;	// integral error scaled by Ki
+        if (twoKi > 0.0f)
+        {
+            integralFBx += twoKi * halfex * dt; // integral error scaled by Ki
             integralFBy += twoKi * halfey * dt;
             integralFBz += twoKi * halfez * dt;
-            gx += integralFBx;	// apply integral feedback
+            gx += integralFBx; // apply integral feedback
             gy += integralFBy;
             gz += integralFBz;
         }
-        else {
-            integralFBx = 0.0f;	// prevent integral windup
+        else
+        {
+            integralFBx = 0.0f; // prevent integral windup
             integralFBy = 0.0f;
             integralFBz = 0.0f;
         }
@@ -223,7 +233,7 @@ void AHRS::updateIMU(float dt)
     }
 
     // Integrate rate of change of quaternion
-    gx *= (0.5f * dt);		// pre-multiply common factors
+    gx *= (0.5f * dt); // pre-multiply common factors
     gy *= (0.5f * dt);
     gz *= (0.5f * dt);
     qa = q0;
@@ -256,7 +266,7 @@ void AHRS::setGyroOffset()
     //-------------------------------------------------------------------------
 
     printf("Beginning Gyro calibration...\n");
-    for(int i = 0; i<100; i++)
+    for (int i = 0; i < 100; i++)
     {
         sensor->update();
         sensor->read_gyroscope(&gx, &gy, &gz);
@@ -265,15 +275,15 @@ void AHRS::setGyroOffset()
         gy *= 180 / PI;
         gz *= 180 / PI;
 
-        offset[0] += gx*0.0175;
-        offset[1] += gy*0.0175;
-        offset[2] += gz*0.0175;
+        offset[0] += gx * 0.0175;
+        offset[1] += gy * 0.0175;
+        offset[2] += gz * 0.0175;
 
         usleep(10000);
     }
-    offset[0]/=100.0;
-    offset[1]/=100.0;
-    offset[2]/=100.0;
+    offset[0] /= 100.0;
+    offset[1] /= 100.0;
+    offset[2] /= 100.0;
 
     printf("Offsets are: %f %f %f\n", offset[0], offset[1], offset[2]);
 
@@ -282,52 +292,51 @@ void AHRS::setGyroOffset()
     gyroOffset[2] = offset[2];
 }
 
-void AHRS::getEuler(float* roll, float* pitch, float* yaw)
+void AHRS::getEuler(float *roll, float *pitch, float *yaw)
 {
-   *roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2)) * 180.0/M_PI;
-   *pitch = asin(2*(q0*q2-q3*q1)) * 180.0/M_PI;
-   *yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3)) * 180.0/M_PI;
+    *roll = atan2(2 * (q0 * q1 + q2 * q3), 1 - 2 * (q1 * q1 + q2 * q2)) * 180.0 / M_PI;
+    *pitch = asin(2 * (q0 * q2 - q3 * q1)) * 180.0 / M_PI;
+    *yaw = atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2 * q2 + q3 * q3)) * 180.0 / M_PI;
 }
 
 float AHRS::invSqrt(float x)
 {
     float halfx = 0.5f * x;
     float y = x;
-    long i = *(long*)&y;
-    i = 0x5f3759df - (i>>1);
-    y = *(float*)&i;
+    long i = *(long *)&y;
+    i = 0x5f3759df - (i >> 1);
+    y = *(float *)&i;
     y = y * (1.5f - (halfx * y * y));
     return y;
 }
 
 float AHRS::getW()
 {
-    return  q0;
+    return q0;
 }
 
 float AHRS::getX()
 {
-    return  q1;
+    return q1;
 }
 
 float AHRS::getY()
 {
-    return  q2;
+    return q2;
 }
 
 float AHRS::getZ()
 {
-    return  q3;
+    return q3;
 }
-
 
 class Socket
 {
 
-public:
-    Socket(char * ip,char * port)
+  public:
+    Socket(char *ip, char *port)
     {
-        sockfd = socket(AF_INET,SOCK_DGRAM,0);
+        sockfd = socket(AF_INET, SOCK_DGRAM, 0);
         servaddr.sin_family = AF_INET;
         servaddr.sin_addr.s_addr = inet_addr(ip);
         servaddr.sin_port = htons(atoi(port));
@@ -335,7 +344,7 @@ public:
 
     Socket()
     {
-        sockfd = socket(AF_INET,SOCK_DGRAM,0);
+        sockfd = socket(AF_INET, SOCK_DGRAM, 0);
         servaddr.sin_family = AF_INET;
         servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
         servaddr.sin_port = htons(7000);
@@ -343,32 +352,32 @@ public:
 
     void output(float W, float X, float Y, float Z, int Hz)
     {
-        sprintf(sendline,"%10f %10f %10f %10f %dHz\n", W, X, Y, Z, Hz);
+        sprintf(sendline, "%10f %10f %10f %10f %dHz\n", W, X, Y, Z, Hz);
         sendto(sockfd, sendline, strlen(sendline), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
     }
 
-private:
+  private:
     int sockfd;
     struct sockaddr_in servaddr = {0};
     char sendline[80];
-
 };
 
-
-
-std::unique_ptr <InertialSensor> get_inertial_sensor( std::string sensor_name)
+std::unique_ptr<InertialSensor> get_inertial_sensor(std::string sensor_name)
 {
-    if (sensor_name == "mpu") {
+    if (sensor_name == "mpu")
+    {
         printf("Selected: MPU9250\n");
-        auto ptr = std::unique_ptr <InertialSensor>{ new MPU9250() };
+        auto ptr = std::unique_ptr<InertialSensor>{new MPU9250()};
         return ptr;
     }
-    else if (sensor_name == "lsm") {
+    else if (sensor_name == "lsm")
+    {
         printf("Selected: LSM9DS1\n");
-        auto ptr = std::unique_ptr <InertialSensor>{ new LSM9DS1() };
+        auto ptr = std::unique_ptr<InertialSensor>{new LSM9DS1()};
         return ptr;
     }
-    else {
+    else
+    {
         return NULL;
     }
 }
@@ -380,14 +389,15 @@ void print_help()
     printf("If you want to visualize IMU data on another machine,\n");
     printf("add IP address and port number (by default 7000):\n");
     printf("-i [sensor name] ipaddress portnumber\n");
-
 }
 
 std::string get_sensor_name(int argc, char *argv[])
 {
-    if (get_navio_version() == NAVIO2) {
+    if (get_navio_version() == NAVIO2)
+    {
 
-        if (argc < 2) {
+        if (argc < 2)
+        {
             printf("Enter parameter\n");
             print_help();
             return std::string();
@@ -397,18 +407,27 @@ std::string get_sensor_name(int argc, char *argv[])
         opterr = 0;
         int parameter;
 
-        while ((parameter = getopt(argc, argv, "i:h")) != -1) {
-            switch (parameter) {
-            case 'i': if (!strcmp(optarg,"mpu") ) return "mpu";
-                            else return "lsm";
-            case 'h': print_help(); return "";
-            case '?': printf("Wrong parameter.\n");
-                      print_help();
-                      return std::string();
+        while ((parameter = getopt(argc, argv, "i:h")) != -1)
+        {
+            switch (parameter)
+            {
+            case 'i':
+                if (!strcmp(optarg, "mpu"))
+                    return "mpu";
+                else
+                    return "lsm";
+            case 'h':
+                print_help();
+                return "";
+            case '?':
+                printf("Wrong parameter.\n");
+                print_help();
+                return std::string();
             }
         }
-
-    } else { //sensor on NAVIO+
+    }
+    else
+    { //sensor on NAVIO+
 
         return "mpu";
     }
@@ -416,7 +435,7 @@ std::string get_sensor_name(int argc, char *argv[])
 
 //============================== Main loop ====================================
 
-void imuLoop(AHRS* ahrs, Socket sock)
+void imuLoop(AHRS *ahrs, Socket sock)
 {
     // Orientation data
 
@@ -432,22 +451,21 @@ void imuLoop(AHRS* ahrs, Socket sock)
     static int isFirst = 1;
     static unsigned long previoustime, currenttime;
 
-
     //----------------------- Calculate delta time ----------------------------
 
-	gettimeofday(&tv,NULL);
-	previoustime = currenttime;
-	currenttime = 1000000 * tv.tv_sec + tv.tv_usec;
-	dt = (currenttime - previoustime) / 1000000.0;
-	if(dt < 1/1300.0) usleep((1/1300.0-dt)*1000000);
-        gettimeofday(&tv,NULL);
-        currenttime = 1000000 * tv.tv_sec + tv.tv_usec;
-	dt = (currenttime - previoustime) / 1000000.0;
+    gettimeofday(&tv, NULL);
+    previoustime = currenttime;
+    currenttime = 1000000 * tv.tv_sec + tv.tv_usec;
+    dt = (currenttime - previoustime) / 1000000.0;
+    if (dt < 1 / 1300.0)
+        usleep((1 / 1300.0 - dt) * 1000000);
+    gettimeofday(&tv, NULL);
+    currenttime = 1000000 * tv.tv_sec + tv.tv_usec;
+    dt = (currenttime - previoustime) / 1000000.0;
 
     //-------- Read raw measurements from the MPU and update AHRS --------------
 
-    ahrs->updateIMU(dt);
-
+    ahrs->update(dt);
 
     //------------------------ Read Euler angles ------------------------------
 
@@ -457,21 +475,23 @@ void imuLoop(AHRS* ahrs, Socket sock)
 
     if (!isFirst)
     {
-    	if (dt > maxdt) maxdt = dt;
-    	if (dt < mindt) mindt = dt;
+        if (dt > maxdt)
+            maxdt = dt;
+        if (dt < mindt)
+            mindt = dt;
     }
     isFirst = 0;
 
     //------------- Console and network output with a lowered rate ------------
 
     dtsumm += dt;
-    if(dtsumm > 0.05)
+    if (dtsumm > 0.05)
     {
         // Console output
-        printf("ROLL: %+05.2f PITCH: %+05.2f YAW: %+05.2f PERIOD %.4fs RATE %dHz \n", roll, pitch, yaw * -1, dt, int(1/dt));
+        printf("ROLL: %+05.2f PITCH: %+05.2f YAW: %+05.2f PERIOD %.4fs RATE %dHz \n", roll, pitch, yaw * -1, dt, int(1 / dt));
 
         // Network output
-        sock.output( ahrs->getW(), ahrs->getX(), ahrs->getY(), ahrs->getZ(), int(1/dt));
+        sock.output(ahrs->getW(), ahrs->getX(), ahrs->getY(), ahrs->getZ(), int(1 / dt));
 
         dtsumm = 0;
     }
@@ -481,7 +501,8 @@ void imuLoop(AHRS* ahrs, Socket sock)
 
 int main(int argc, char *argv[])
 {
-    if (check_apm()) {
+    if (check_apm())
+    {
         return 1;
     }
 
@@ -492,12 +513,14 @@ int main(int argc, char *argv[])
 
     auto imu = get_inertial_sensor(sensor_name);
 
-    if (!imu) {
+    if (!imu)
+    {
         printf("Wrong sensor name. Select: mpu or lsm\n");
         return EXIT_FAILURE;
     }
 
-    if (!imu->probe()) {
+    if (!imu->probe())
+    {
         printf("Sensor not enable\n");
         return EXIT_FAILURE;
     }
@@ -508,16 +531,16 @@ int main(int argc, char *argv[])
 
     if (argc == 5)
         sock = Socket(argv[3], argv[4]);
-    else if ( (get_navio_version() == NAVIO) && (argc == 3) )
-            sock = Socket(argv[1], argv[2]);
-        else
-            sock = Socket();
+    else if ((get_navio_version() == NAVIO) && (argc == 3))
+        sock = Socket(argv[1], argv[2]);
+    else
+        sock = Socket();
 
-    auto ahrs = std::unique_ptr <AHRS>{new AHRS(move(imu)) };
+    auto ahrs = std::unique_ptr<AHRS>{new AHRS(move(imu))};
 
     //-------------------- Setup gyroscope offset -----------------------------
 
     ahrs->setGyroOffset();
-    while(1)
+    while (1)
         imuLoop(ahrs.get(), sock);
 }
