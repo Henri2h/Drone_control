@@ -1,91 +1,10 @@
 /*
-
-Drone control
-
+Title : Drone control
+Description : School project
+Author : made by Henri2h
+Year : 2018 - 2019
 */
-
-#include <Common/Util.h>
-#include <unistd.h>
-#include <memory>
-#include <iostream>
-#include <fstream>
-#include <string>
-
-#include <ctime>
-#include <chrono>
-#include <math.h>
-
-#include "RCInputManager.cpp"
-#include "ServoManager.cpp"
-#include "IMU.cpp"
-#include "Stab/Stabilisation.cpp"
-#include "LEDManager.cpp"
-#include "Remote.cpp"
-#include "SensorsManager/SensorManager.cpp"
-
-#include "Ref.h"
-
-#define LOGNAME_FORMAT "/home/pi/log/data_%Y%m%d_%H%M%S.csv"
-#define LOGNAME_SIZE 50
-
-using namespace std;
-
-typedef std::chrono::high_resolution_clock TimeM;
-
-int i = 0;
-string version = "0.1.8";
-
-
-LEDManager led = LEDManager();
-RCInputManager rc = RCInputManager();
-ServoManager servo = ServoManager();
-IMU imu = IMU();
-Remote remote = Remote();
-Stabilisation stab = Stabilisation();
-SensorManager sMana = SensorManager();
-
-auto time_start = TimeM::now();
-
-auto last = TimeM::now();
-auto t_last = TimeM::now();
-float t = 0; // time
-float ang[3] = {0, 0, 0};
-float ang_acc[3] = {0, 0, 0};
-
-float acceleration[3] = {0, 0, 0};
-float rates[3] = {0, 0, 0};
-
-int commands[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-float commands_gen[4] = {0, 0, 0, 0}; // to have an idea of what commands we send to the control algorithm, in ° or in °/s
-
-// remote
-int pid_out[3] = {0, 0, 0};
-float pid_debug[3] = {0, 0, 0};
-
-float motors[4] = {0, 0, 0, 0};
-int motors_output[4] = {0, 0, 0, 0};
-int sensors[2] = {0, 0}; // pressure, temperature
-int frequency_crtl[] = {0, 0};
-
-// safety
-bool flag_error = false;
-bool flag_not_ready = true; // boot with this flag enabled
-
-bool isArmed = false;
-bool isArming = false;
-int stabilisation_mode = 0; // rates = 0, angle = 1
-    //float cmd[3] = {0, 0, 0};   // command mapped
-
-// saving
-
-int orders[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-double status[status_length];
-// status array definition : see Ref.h
-// time
-auto arming_t_started = TimeM::now();
-
-// adding a status save system : ease dvpt
-
+#include "Drone.h"
 
 void updateOrders()
 {
@@ -102,11 +21,11 @@ void updateOrders()
 
     if (orders[status_DisplayGains] == 1)
     {
-        stab.showGains = true;
+        stab->showGains = true;
     }
     else
     {
-        stab.showGains = false;
+        stab->showGains = false;
     }
 }
 
@@ -121,171 +40,156 @@ void safety()
 
             if (isArming == false) // is arming
             {
-                cout << "ARMING\n";
+                FileManagement::Log("Safety", "ARMING");
                 isArming = true;
                 arming_t_started = TimeM::now();
-                led.setArming();
+                led->setArming();
             }
             else if (isArming && t_diff * pow(10, -9) > 2 && isArmed == false)
             {
-                cout << "ARMED\n";
+                FileManagement::Log("Safety", "Armed");
                 isArmed = true;
-                led.setArmed();
+                led->setArmed();
             }
         }
         else
         {
             isArmed = false;
             isArming = false;
-            led.backToPrevious();            
+            led->backToPrevious();
         }
     }
 }
 
 void setup()
 {
-    led.setKO();
+    data = Data();
+    // initialize log file
+    FileManagement::initialize();
+    FileManagement::Log("Main : Setup", "Version : " + version);
+    FileManagement::Log("MAIN : main", "Frequency : " + to_string(frequency) + " Hz");
+    cout << FileManagement::listDir("/home/pi/data/log/") << "\n";
 
     // check if root
     if (getuid())
     {
-        printf("Not root. Please launch with root permission: sudo \n");
+        FileManagement::Log("Main : Setup", "Not root. Please launch it with root permission : sudo");
         throw "Not root";
     }
 
     if (check_apm()) // check if apm (ardupilot) is running
     {
-        cout << "APM is running ... could not run";
+        FileManagement::Log("Main", "APM is running ... could not run");
         throw "APM running";
     }
 
-    cout << "[ MAIN ] : " << version << "\n";
-    printf("[ MAIN ] : Setup \n");
-    servo.initialize();
+    led = std::make_shared<LEDManager>();
+    led->setKO();
 
-    stab.initialize(status);
+    imu = std::make_shared<IMU>();
+    rc = std::make_shared<RCInputManager>();
+    servo = std::make_shared<ServoManager>();
+    stab = std::make_shared<Stabilisation>();
+    sMana = std::make_shared<SensorManager>();
+    remote = std::make_shared<Remote>();
+
+    servo->initialize();
+
+    stab->initialize(status);
 
     // start sensorManager
-    sMana.startThread(status);
+    sMana->startThread(status);
 
     // launch remote
 
-    remote.launch(commands_gen, ang, acceleration, rates, pid_out, pid_debug, sensors, status, orders, &t);
+    remote->launch(commands_gen, ang, acceleration, rates, pid_out, pid_debug, sensors, status, orders, &t);
 
     // set saving
     status[status_Saving] = 0;
     flag_not_ready = false; // now the quadcopter is ready !!!
-    led.setOK();
+    FileManagement::Log("Main : Setup", "Initializated");
+    led->setOK();
 }
 
 void loop()
 {
+    // ************ TIME : get **********
     // get informations
     auto now = TimeM::now();
-    imu.update(); // get imu data just after timing
 
-    rc.read(commands);
+    // ************ IMU : update **********
+    imu->update(); // get imu data just after timing
 
+    // ************ rc : read **********
+    rc->read(commands);
+
+    // ************ TIME : calculus : start **********
     // process informations
+
+    // before start
     double now_n = chrono::duration<double, nano>(now - time_start).count();
+
+    // since last iteration
     double diff_nano = chrono::duration<double, nano>(now - t_last).count();
-
     t_last = now;
-
     // dt : convert nano to seconds
-    float dt = diff_nano * pow(10, -9.0);
-    t = now_n * pow(10, -9.0);
+    float dt = diff_nano * pow(10, -9.0); // back in seconds
+    t = now_n * pow(10, -9.0);            // back in seconds
+    // ************ TIME : calculus : end **********
 
-    // update imu
-    imu.setDt(dt); // update dt
+    // ************ update imu ************
+    imu->setDt(dt); // update dt
 
-    // safety check :
+    // ************ safety check ************
     safety();
 
-    // angles
-    imu.getComplementar(ang, ang_acc); // get angles
-    imu.getRates(rates);
-    imu.getAcceleration(acceleration);
+    // ************ angles ************
+    imu->getComplementar(data); // get angles complementar
+    imu->getRates(rates);
+    imu->getAcceleration(acceleration);
+    
+    // ************ stabilize ************
+    stab->Stabilize(data, dt);
 
-    // stabilize
-    stab.Stabilize(&stabilisation_mode, commands_gen, motors_output, isArmed, commands, ang, rates, dt, pid_debug);
-    servo.setDuty(motors_output);
+    // send output to motors
+    servo->setDuty(motors_output);
     i++;
 
-    // led display
-    led.update();
+    // ************ led display ************
+    led->update();
 
-    // display frequency
-    int r = 1800;
-    if (i % r == 0)
+    // ************ display frequency ************
+
+    if (i % f_display_iterationscount == 0)
     {
-
         auto now = TimeM::now();
         float diff = chrono::duration<double, nano>(now - last).count();
 
-        float f = r / (diff * pow(10, -9.0));
-        cout << "f : " << f << "Hz "
+        float f = f_display_iterationscount / (diff * pow(10, -9.0));
+        cout << "[ MAIN ] : f : " << f << "Hz "
              << "\n";
         last = now;
+        if (imu->getFilterUsage() == IMU_Filter_usage_none)
+        {
+            cout << "both\n";
+            imu->setFilterUsage(IMU_Filter_usage_both);
+        }
+        else
+        {
+            cout << "none\n";
+            imu->setFilterUsage(IMU_Filter_usage_none);
+        }
     }
+    // end
 }
 
-int isFileOpen = false;
-ofstream myfile;
-
-void saveData()
-{
-    string sep = ",";
-    if (status[status_Saving] == 1 && isFileOpen == false)
-    {
-        std::cout << "[ FileSaving ] : going to save\n";
-        // open file
-        static char name[LOGNAME_SIZE];
-        time_t now = time(0);
-        strftime(name, sizeof(name), LOGNAME_FORMAT, localtime(&now));
-        myfile.open(name);
-
-        isFileOpen = true;
-
-        myfile << "t" << sep
-               << "stabilisation mode" << sep
-               << "commands_gen[0]" << sep << "commands_gen[1]" << sep << "commands_gen[2]" << sep << "commands_gen[3]" << sep
-               << "rates[0]" << sep << "rates[1]" << sep << "rates[2]" << sep
-               << "acceleration[0]" << sep << "acceleration[1]" << sep << "acceleration[2]" << sep
-               << "ang[0]" << sep << "ang[1]" << sep << "ang[2]" << sep
-               << "pid_out[0]" << sep << "pid_out[1]" << sep << "pid_out[2]"
-               << "\n";
-    }
-
-    if (status[status_Saving] == 1)
-    {
-        // save data in a csv format
-        myfile << t << sep
-               << stabilisation_mode << sep
-               << commands_gen[0] << sep << commands_gen[1] << sep << commands_gen[2] << sep << commands_gen[3] << sep
-               << rates[0] << sep << rates[1] << sep << rates[2] << sep
-               << acceleration[0] << sep << acceleration[1] << sep << acceleration[2] << sep
-               << ang[0] << sep << ang[1] << sep << ang[2] << sep
-               << pid_debug[0] << sep << pid_debug[1] << sep << pid_debug[2]
-               << "\n";
-    }
-
-    if (status[status_Saving] == 0 && isFileOpen)
-    {
-        std::cout << "[ FileSaving ] : file saving ended\n";
-        isFileOpen = false;
-        myfile.close();
-    }
-}
-
+// ************ MAIN ************
 auto last_call = TimeM::now();
 bool useTimer = true;
 int main(int argc, char *argv[])
-{
-    double frequency = 900;      //Hz
+{                                //Hz
     double f_dt = 1 / frequency; //seconds
     long long int f_dt_n = f_dt * pow(10, 9);
-    cout << "[ MAIN ] : frequency : " << f_dt_n << "Hz \n";
     setup();
 
     // timer variables
@@ -302,9 +206,10 @@ int main(int argc, char *argv[])
             {
                 // micro second
                 // if error is superior to 10 micro second, reset clock
-                if (pow(10, -3) * chrono::duration<double, nano>(TimeM::now() - last_call).count() > 10)
+                if (pow(10, -3) * chrono::duration<double, nano>(TimeM::now() - last_call).count() > 9000 * f_dt)
                 {
-                    cout << "Clock reset\n";
+                    FileManagement::Log("MAIN", "Clock reset" + to_string(chrono::duration<double, nano>(TimeM::now() - last_call).count()) + " nanoseconds");
+                    // cout << pow(10, -3) * chrono::duration<double, nano>(TimeM::now() - last_call).count() << " " << 9000 *f_dt << "\n";
                     last_call = TimeM::now();
                 }
             }
@@ -314,8 +219,9 @@ int main(int argc, char *argv[])
 
         // call loop
         loop();
-        updateOrders();
 
-        saveData();
+        updateOrders();
+        FileManagement::saveData(data, t);
     }
 }
+, stabilisation_mode, commands_gen, acceleration, rates, ang, pid_debug, status
