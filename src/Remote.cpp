@@ -3,7 +3,6 @@
 #include <cmath>
 #include <thread>
 #include <sstream>
-#include "FileManagement.cpp"
 
 using namespace uWS;
 using namespace std;
@@ -150,7 +149,7 @@ class Remote
         static int *orders = orders_in;
         static double *status = status_in;
 
-        printf("[ REMOTE ] : Started\n");
+        FileManagement::Log("REMOTE", "Started");
         Hub h;
         std::string response = "Hello!";
 
@@ -244,7 +243,7 @@ class Remote
 
                 else
                 {
-                    std::cout << "[ Remote ] : command unknown : " << r << "\n";
+                   FileManagement::Log("Remote", "command unknown");
                     ws->send("KO", 2, opCode);
                 }
             }
