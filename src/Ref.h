@@ -20,6 +20,15 @@
 #define rates_roll 1
 #define rates_yaw 2
 
+// switch values in the radio
+// in order to use my recieve wich has a builtin mode to have 6 different values on one chanel
+#define cmd_mode_delta 50
+#define cmd_mode_1 921
+#define cmd_mode_2 1152
+#define cmd_mode_3 1383
+#define cmd_mode_4 1615
+#define cmd_mode_5 1846
+#define cmd_mode_6 2077
 
 // status
 #define status_Saving 0
@@ -41,14 +50,31 @@
 // gains
 #define status_stab_mode 11
 #define status_gains_atti_kp 12
+//d
+//i
 #define status_gains_rate_kp 13
 #define status_gains_rate_kd 14
+#define status_gains_rate_ki 15
 
 // number of items
-#define status_length 14
+#define status_length 16
 
 #define order_Saving 0
 #define orders_DisplayGains 1
 
 #define grav 9.81
 #define pi 3.14159
+
+// IMU
+   /*
+   Filter :
+    0 : no
+    1 : acceleration
+    2 : gyration
+    3 : both
+    */
+   
+#define IMU_Filter_usage_none 0
+#define IMU_Filter_usage_acc 1
+#define IMU_Filter_usage_gyr 2
+#define IMU_Filter_usage_both 3

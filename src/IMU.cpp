@@ -13,6 +13,7 @@ All angle are expressed in degrees
 #include "Common/MPU9250.h"
 #include "Navio2/LSM9DS1.h"
 #include "Common/Util.h"
+#include "Ref.h"
 #include <unistd.h>
 #include <string>
 #include <memory>
@@ -37,8 +38,8 @@ class IMU
     const int y = 1;
     const int z = 2;
 
-    const float kAcc = 0;
-    const float kGyr = 1;
+    const float kAcc = 0.02;
+    const float kGyr = 0.98;
 
     const float g = 9.81;
 
@@ -47,7 +48,7 @@ class IMU
     float accel_old[3] = {0, 0, 0};
     float rates_old[3] = {0, 0, 0};
     float w0Te = 1;
-    int filterUsage = 3;
+    int filterUsage = IMU_Filter_usage_both; // default value
     /*
     0 : no
     1 : acceleration
@@ -64,13 +65,13 @@ class IMU
     {
         if (sensor_name == "mpu")
         {
-            printf("[ IMU ] : Selected: MPU9250\n");
+            FileManagement::Log("IMU", "Selected: MPU9250");
             auto ptr = std::unique_ptr<InertialSensor>{new MPU9250()};
             return ptr;
         }
         else if (sensor_name == "lsm")
         {
-            printf("[ IMU ] : Selected: LSM9DS1\n");
+            FileManagement::Log("IMU", "Selected: LSM9DS1");
             auto ptr = std::unique_ptr<InertialSensor>{new LSM9DS1()};
             return ptr;
         }
@@ -92,7 +93,7 @@ class IMU
             accOffset[i] = 0;
         }
 
-        int samples = 900 * 4;
+        int samples = 600; // user defined ratio : TODO : see what is the minimum value
 
         for (size_t i = 0; i < samples; i++) // add all the samples
         {
@@ -107,14 +108,13 @@ class IMU
             usleep(500);
         }
 
-        std::cout << "[ IMU ] : offsets : \n";
+        FileManagement::Log("IMU", "offsets :");
         for (size_t i = 0; i < AXIS_NB; i++) // divide and display the offsets
         {
             accOffset[i] /= samples;
             gyrOffset[i] /= samples;
-
-            std::cout << "[ IMU ] : scaled  i : |" << i << "| acc : " << accOffset[i] << " gyro : " << gyrOffset[i] << "\n";
-        }
+            FileManagement::Log("IMU", "scaled  i : |" + to_string(i) + "| acc : " + to_string(accOffset[i]) + " gyro : " + to_string(gyrOffset[i]));
+           }
 
         offsetSet = true;
     }
@@ -123,13 +123,13 @@ class IMU
     {
         if (!sensor)
         {
-            printf("Wrong sensor name. Select: mpu or lsm\n");
+            FileManagement::Log("IMU","Wrong sensor name. Select: mpu or lsm\n");
             //return EXIT_FAILURE;
         }
 
         if (!sensor->probe())
         {
-            printf("Sensor not enabled\n");
+            FileManagement::Log("IMU", "Sensor not enabled");
             //return EXIT_FAILURE;
         }
         sensor->initialize();
@@ -144,17 +144,21 @@ class IMU
         sensor->read_gyroscope(&imu_values[3], &imu_values[4], &imu_values[5]);
         sensor->read_magnetometer(&imu_values[6], &imu_values[7], &imu_values[8]);
 
+
+        /*
+            IMU offsets and filter
+        */
         for (size_t i = 0; i < AXIS_NB && offsetSet; i++) // calculate them if ofset are set
         {
             imu_values[i] -= accOffset[i];
             imu_values[i + ARR_GYRO_POS] -= gyrOffset[i];
 
-            if (filterUsage == 2 || filterUsage == 3)
+            if (filterUsage == IMU_Filter_usage_gyr || filterUsage == IMU_Filter_usage_both)
             {
                 imu_values[i + ARR_GYRO_POS] = doFilter(imu_values[i + ARR_GYRO_POS], rates_old[i]);
                 rates_old[i] = imu_values[i + ARR_GYRO_POS];
             }
-            if (filterUsage == 1 || filterUsage == 3)
+            if (filterUsage == IMU_Filter_usage_acc || filterUsage == IMU_Filter_usage_both)
             {
                 imu_values[i] = doFilter(imu_values[i], accel_old[i]);
                 accel_old[i] = imu_values[i];
@@ -167,38 +171,38 @@ class IMU
         dt = dt_in;
     }
 
-    void getAngleAccel(float *ang)
+    void getAngleAccel(Data data)
     {
 
         if (imu_values[z] != 0)
         {
-            ang[x] = atan(imu_values[x] / imu_values[z]) * 180 / PI;
-            ang[y] = atan(imu_values[y] / imu_values[z]) * 180 / PI; // convert in degrees
+            data.ang[x] = atan(imu_values[x] / imu_values[z]) * 180 / PI;
+            data.ang[y] = atan(imu_values[y] / imu_values[z]) * 180 / PI; // convert in degrees
         }
         else
         { // it really mean that we cannot determine angles this way
-            ang[x] = 0;
-            ang[y] = 0;
+            data.ang[x] = 0;
+            data.ang[y] = 0;
         }
 
         // non trivial rules
 
         if (imu_values[z] <= 0 && imu_values[y] <= 0)
         {
-            ang[x] -= 180;
+            data.ang[x] -= 180;
         }
         else if (imu_values[z] <= 0 && imu_values[y] > 0)
         {
-            ang[x] += 180;
+            data.ang[x] += 180;
         }
 
         if (imu_values[z] <= 0 && imu_values[x] <= 0)
         {
-            ang[y] -= 180;
+            data.ang[y] -= 180;
         }
         else if (imu_values[z] <= 0 && imu_values[x] > 0)
         {
-            ang[y] += 180;
+            data.ang[y] += 180;
         }
     }
 
@@ -226,26 +230,31 @@ class IMU
         }
     }
 
-    float *getComplementar(float *ang, float *ang_acc)
+    void getComplementar(Data data) // store complementar angle in data
     {
-        getAngleAccel(ang_acc);
+        getAngleAccel(data);
         for (size_t i = 0; i < 3; i++)
         { // to use gyration
-            ang[i] = (ang[i] + imu_values[i + ARR_GYRO_POS] * dt) * kGyr + ang_acc[i] * kAcc;
-            if (false && ang[i] > 180)
+            data.ang[i] = (data.ang[i] + imu_values[i + ARR_GYRO_POS] * dt) * kGyr + data.ang_acc[i] * kAcc;
+            if (false && data.ang[i] > 180)
             {
-                ang[i] -= 180;
+                data.ang[i] -= 180;
             }
-            else if (false && ang[i] < -180)
+            else if (false && data.ang[i] < -180)
             {
-                ang[i] += 180;
+                data.ang[i] += 180;
             }
         }
-        return ang;
     }
 
     void setFilterUsage(int usage)
     {
         filterUsage = usage;
+    }
+
+    // return filter usage
+    int getFilterUsage()
+    {
+        return filterUsage;
     }
 };
