@@ -12,10 +12,9 @@
 
 // references
 #include "Ref.h"
+#include "Data.cpp"
 
 #include "FileManagement.cpp"
-
-#include "Data.cpp"
 
 
 #include "RCInputManager.cpp"
@@ -43,6 +42,7 @@ std::shared_ptr<IMU> imu;
 std::shared_ptr<Remote> remote;
 std::shared_ptr<Stabilisation> stab;
 std::shared_ptr<SensorManager> sMana;
+static Data data;
 
 auto time_start = TimeM::now();
 
@@ -56,5 +56,3 @@ auto arming_t_started = TimeM::now();
 
 // adding a status save system : ease dvpt
 int f_display_iterationscount = 6000;
-
-Data data;

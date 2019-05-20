@@ -68,8 +68,7 @@ class GPS
         {
             status[status_gps_fix] = pos_data[0]; // Fix status
             std::cout << "[ GPS ] : status gps fix : " << status[status_gps_fix] << "\n";
-            /*
-            */
+
             status[status_gps_get_fix] = pos_data[1]; // getFixOk
             
             /*printf("gpsFixOk: %d\n", ((int)pos_data[1] & 0x01));

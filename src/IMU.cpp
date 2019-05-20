@@ -171,7 +171,7 @@ class IMU
         dt = dt_in;
     }
 
-    void getAngleAccel(Data data)
+    void getAngleAccel(Data& data)
     {
 
         if (imu_values[z] != 0)
@@ -206,31 +206,31 @@ class IMU
         }
     }
 
-    void getAcceleration(float *ang)
+    void getAcceleration(Data& data)
     {
         for (size_t i = 0; i < 3; i++)
         {
-            ang[i] = imu_values[i]; // acceleration
+            data.acceleration[i] = imu_values[i]; // acceleration
         }
     }
 
-    void getRates(float *rates) // rates
+    void getRates(Data& data) // rates
     {
         for (size_t i = 0; i < 3; i++)
         {
-            rates[i] = imu_values[i + ARR_GYRO_POS];
+            data.rates[i] = imu_values[i + ARR_GYRO_POS];
         }
     }
 
-    void getGyrationAngle(float *ang)
+    void getGyrationAngle(Data& data) // should be used only once
     {
         for (size_t i = 0; i < 3; i++)
         {
-            ang[i] += imu_values[i + ARR_GYRO_POS] * dt; // to use gyration
+            data.ang[i] += imu_values[i + ARR_GYRO_POS] * dt; // to use gyration
         }
     }
 
-    void getComplementar(Data data) // store complementar angle in data
+    void getComplementar(Data& data) // store complementar angle in data
     {
         getAngleAccel(data);
         for (size_t i = 0; i < 3; i++)

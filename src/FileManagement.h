@@ -24,5 +24,5 @@ class FileManagement
     static void initialize();
     static void Log(string base, string text);
     static std::string listDir(const char *list);
-    static void saveData(float t, int stabilisation_mode, float *commands_gen, float *acceleration, float *rates, float *ang, float *pid_debug, double *status);
+    static void saveData(Data& data, float t);
 };

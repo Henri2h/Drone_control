@@ -43,7 +43,7 @@ class Attitude_Controller
     float e_s = 0;
 
     // attention, pour permettre que les deux boucles soient indépendantes, il ne faut pas quelle fonctionnent à la même fréquence !! 
-    void update(Data data, float *cmd, float dt)
+    void update(Data& data, float *cmd, float dt)
     {   
         // pitch
         cmd[pid_pitch] = loop_pos_pitch.update(cmd[pid_pitch], data.ang[pid_pitch], dt); // outer loop (attitude)
@@ -55,7 +55,7 @@ class Attitude_Controller
         // roll
         float pid_cmd_roll = cmd[pid_roll];
             // angle
-        pid_cmd_roll = loop_pos_roll.update(data.pid_cmd_roll, data.ang[pid_roll], dt); // outer loop pos
+        pid_cmd_roll = loop_pos_roll.update(pid_cmd_roll, data.ang[pid_roll], dt); // outer loop pos
         e_s = e_s + pid_cmd_roll*dt;
         // feed it to the inner loop
         

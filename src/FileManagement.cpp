@@ -42,7 +42,7 @@ std::string FileManagement::listDir(const char *list)
     return ss.str();
 }
 
-void FileManagement::saveData(Data data, float t)
+void FileManagement::saveData(Data& data, float t)
 {
     string sep = ",";
     if (data.status[status_Saving] == 1 && FileManagement::isFileOpen == false)
@@ -55,7 +55,6 @@ void FileManagement::saveData(Data data, float t)
         FileManagement::myfile.open(name);
 
         FileManagement::isFileOpen = true;
-
         FileManagement::myfile << "t" << sep
                                << "stabilisation mode" << sep
                                << "commands_gen[0]" << sep << "commands_gen[1]" << sep << "commands_gen[2]" << sep << "commands_gen[3]" << sep
@@ -66,20 +65,20 @@ void FileManagement::saveData(Data data, float t)
                                << "\n";
     }
 
-    if (status[status_Saving] == 1)
+    if (data.status[status_Saving] == 1)
     {
         // save data in a csv format
         FileManagement::myfile << t << sep
                                << data.stabilisation_mode << sep
-                               << commands_gen[0] << sep << commands_gen[1] << sep << commands_gen[2] << sep << commands_gen[3] << sep
-                               << rates[0] << sep << rates[1] << sep << rates[2] << sep
-                               << acceleration[0] << sep << acceleration[1] << sep << acceleration[2] << sep
-                               << ang[0] << sep << ang[1] << sep << ang[2] << sep
-                               << pid_debug[0] << sep << pid_debug[1] << sep << pid_debug[2]
+                               << data.commands_gen[0] << sep << data.commands_gen[1] << sep << data.commands_gen[2] << sep << data.commands_gen[3] << sep
+                               << data.rates[0] << sep << data.rates[1] << sep << data.rates[2] << sep
+                               << data.acceleration[0] << sep << data.acceleration[1] << sep << data.acceleration[2] << sep
+                               << data.ang[0] << sep << data.ang[1] << sep << data.ang[2] << sep
+                               << data.pid_debug[0] << sep << data.pid_debug[1] << sep << data.pid_debug[2]
                                << "\n";
     }
 
-    if (status[status_Saving] == 0 && FileManagement::isFileOpen)
+    if (data.status[status_Saving] == 0 && FileManagement::isFileOpen)
     {
         std::cout << "[ FileSaving ] : file saving ended\n";
         FileManagement::isFileOpen = false;

@@ -77,12 +77,12 @@ class ServoManager
         return 0;
     }
 
-    void setDuty(int duty[])
+    void setDuty(Data data)
     {
 
         for (size_t i = 0; i < 4; i++)
         {
-            int a = duty[i];
+            int a = data.motors_output[i];
             if (a < SERVO_MIN) a = SERVO_MIN;
             if (a > SERVO_MAX) a = SERVO_MAX;
 
