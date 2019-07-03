@@ -23,7 +23,7 @@ private:
     const float MAX_YAW_SPEED = 220; // (°/s) Max yaw speed in accro and angle modes
 
     /// Change stabilisation depending on remote commands
-    void getStabilisationMode(Data& data)
+    void getStabilisationMode(Data &data)
     {
         int other_mode = 4;
 
@@ -82,129 +82,170 @@ public:
     }
 
     int i = 0;
-    int *Stabilize(Data data, float dt)
+    int *Stabilize(Data &data, float dt)
     {
         iter++;
         i++;
         getStabilisationMode(data);
         data.status[status_stab_mode] = data.stabilisation_mode;
 
-        // commands
         int cmd_raw[3] = {data.commands[cmd_pitch], data.commands[cmd_roll], data.commands[cmd_yaw]};
 
         // map values
         data.entree[3] = data.commands[cmd_throttle];
 
-        // map values :
-        float MAX = MAX_ANGLE;
-        if (data.stabilisation_mode == 0)
-        { // rates mode
-            MAX = MAX_RATES;
-        }
+        data.commands_gen[entree_throttle] = 0;
+        data.commands_gen[entree_roll] = 0;
 
-        cmd[pid_pitch] = mapValue(cmd_raw[pid_pitch], 1075, 1920, -MAX, MAX);
-        cmd[pid_roll] = mapValue(cmd_raw[pid_roll], 1075, 1920, -MAX, MAX);
-        cmd[pid_yaw] = mapValue(cmd_raw[pid_yaw], 1075, 1920, -MAX_YAW_SPEED, MAX_YAW_SPEED);
-
-        // compute commands
-        // update orders
-        if (data.stabilisation_mode == 1)
+        if (status[status_experience_mode] != 2)
         {
-            data.entree[pid_pitch] = cmd[pid_pitch];
-            data.entree[pid_roll] = cmd[pid_roll];
+            // commands
 
-            // fix values
-            float kp_atti = mapValue(data.commands[cmd_kd], 922, 2077, 0, pid_gains_attitude_max);
-            float kp_rate = mapValue(data.commands[cmd_kp], 922, 2077, 0, pid_gains_rate_max);
-            float kd_rate = mapValue(data.commands[cmd_ki], 921, 2077, 0, 2);
+            // map values :
+            float MAX = MAX_ANGLE;
+            if (data.stabilisation_mode == 0)
+            { // rates mode
+                MAX = MAX_RATES;
+            }
 
-            if (i % 600 == 0 && showGains)
+            cmd[pid_pitch] = mapValue(cmd_raw[pid_pitch], 1075, 1920, -MAX, MAX);
+            cmd[pid_roll] = mapValue(cmd_raw[pid_roll], 1075, 1920, -MAX, MAX);
+            cmd[pid_yaw] = mapValue(cmd_raw[pid_yaw], 1075, 1920, -MAX_YAW_SPEED, MAX_YAW_SPEED);
+
+            // compute commands
+            // update orders
+            if (data.stabilisation_mode == 1)
             {
-                i = 0;
-                std::cout << "kp_atti : " << kp_atti << " kp_rate : " << kp_rate << " kd_rate : " << kd_rate << "\n";
-            }
+                data.entree[pid_pitch] = cmd[pid_pitch];
+                data.entree[pid_roll] = cmd[pid_roll];
 
-            data.status[status_gains_atti_kp] = kp_atti;
-            data.status[status_gains_rate_kp] = kp_rate;
-            data.status[status_gains_rate_kd] = kd_rate;
+                // fix values
+                float kp_atti = mapValue(data.commands[cmd_kd], 922, 2077, 0, pid_gains_attitude_max);
+                float kp_rate = mapValue(data.commands[cmd_kp], 922, 2077, 0, pid_gains_rate_max);
+                float kd_rate = mapValue(data.commands[cmd_ki], 921, 2077, 0, 2);
 
-            attitude_c.update_pid(kp_atti, kp_rate, kd_rate); // update gains
-            attitude_c.update(data, cmd, dt);
-        }
-
-        else // rate mode
-        {
-            // param
-            float a = 1 / 40.0;
-            int max = 100;
-
-            if (data.stabilisation_mode == 2)
-            { // essai indiciel
-                data.commands[cmd_throttle] = 1550;
-
-                cmd[pid_pitch] = 0;
-                cmd[pid_roll] = max;
-
-                data.entree[pid_roll] = max;
-            }
-            else if (data.stabilisation_mode == 3)
-            { // rampe
-                data.commands[cmd_throttle] = 1550;
-                cmd[pid_pitch] = 0;
-
-                if (itermode == 0)
+                if (i % 600 == 0 && showGains)
                 {
-                    cmd[pid_roll] = a * iter;
-                    if (iter * a > max)
-                    {
-                        itermode = 1;
-                        iter = 0;
-                    }
-                }
-                else
-                {
-                    cmd[pid_roll] = max - a * iter;
-                    if (max - a * iter <= 0)
-                    {
-                        itermode = 0;
-                        iter = 0;
-                    }
+                    i = 0;
+                    std::cout << "kp_atti : " << kp_atti << " kp_rate : " << kp_rate << " kd_rate : " << kd_rate << "\n";
                 }
 
-                data.entree[pid_roll] = cmd[pid_roll];
-            }
-            else if (data.stabilisation_mode == 4)
-            { 
-                // sinusoidal
-                data.commands[cmd_throttle] = 1550;
-                cmd[pid_pitch] = 0;
-                cmd[pid_roll] = max * cos(a * iter / 120);
-                data.entree[pid_roll] = cmd[pid_roll];
+                data.status[status_gains_atti_kp] = kp_atti;
+                data.status[status_gains_rate_kp] = kp_rate;
+                data.status[status_gains_rate_kd] = kd_rate;
+
+                attitude_c.update_pid(kp_atti, kp_rate, kd_rate); // update gains
+                attitude_c.update(data, cmd, dt);
             }
 
-            // fix values
-            float kp_rate = mapValue(data.commands[cmd_kp], 922, 2077, 0, pid_gains_rate_max);
-            float kd_rate = mapValue(data.commands[cmd_ki], 921, 2077, 0, 2);
+            else // rate mode
+            {
+                // param
+                float a = 1 / 40.0;
+                int max = 100;
 
-            data.status[status_gains_rate_kp] = kp_rate;
-            data.status[status_gains_rate_kd] = kd_rate;
+                if (data.stabilisation_mode == 2)
+                { // essai indiciel
+                    data.commands[cmd_throttle] = 1550;
 
-            rate_c.update_pid(kp_rate, kd_rate);
-            rate_c.update(cmd, data.rates, dt, data.pid_debug);
-            if (i % 600 == 0 && showGains)
+                    cmd[pid_pitch] = 0;
+                    cmd[pid_roll] = max;
+
+                    data.entree[pid_roll] = max;
+                }
+                else if (data.stabilisation_mode == 3)
+                { // rampe
+                    data.commands[cmd_throttle] = 1550;
+                    cmd[pid_pitch] = 0;
+
+                    if (itermode == 0)
+                    {
+                        cmd[pid_roll] = a * iter;
+                        if (iter * a > max)
+                        {
+                            itermode = 1;
+                            iter = 0;
+                        }
+                    }
+                    else
+                    {
+                        cmd[pid_roll] = max - a * iter;
+                        if (max - a * iter <= 0)
+                        {
+                            itermode = 0;
+                            iter = 0;
+                        }
+                    }
+
+                    data.entree[pid_roll] = cmd[pid_roll];
+                }
+                else if (data.stabilisation_mode == 4)
+                {
+                    // sinusoidal
+                    data.commands[cmd_throttle] = 1550;
+                    cmd[pid_pitch] = 0;
+                    cmd[pid_roll] = max * cos(a * iter / 120);
+                    data.entree[pid_roll] = cmd[pid_roll];
+                }
+
+                // fix values
+                float kp_rate = mapValue(data.commands[cmd_kp], 922, 2077, 0, pid_gains_rate_max);
+                float kd_rate = mapValue(data.commands[cmd_ki], 921, 2077, 0, 2);
+
+                data.status[status_gains_rate_kp] = kp_rate;
+                data.status[status_gains_rate_kd] = kd_rate;
+
+                rate_c.update_pid(kp_rate, kd_rate);
+                rate_c.update(cmd, data.rates, dt, data.pid_debug);
+                if (i % 600 == 0 && showGains)
+                {
+                    i = 0;
+                    std::cout << "kp_rate : " << kp_rate << " kd_rate : " << kd_rate << "\n";
+                    std::cout << "cmd : " << cmd[pid_roll] << " kd_rate : " << data.rates[pid_roll] << "\n";
+                }
+            }
+
+            if (i % 100 == 0 and false)
             {
                 i = 0;
-                std::cout << "kp_rate : " << kp_rate << " kd_rate : " << kd_rate << "\n";
-                std::cout << "cmd : " << cmd[pid_roll] << " kd_rate : " << data.rates[pid_roll] << "\n";
+                std::cout << "Cmd : " << cmd[pid_roll] << " " << data.rates[pid_roll] << "\n";
             }
         }
-
-        if (i % 100 == 0 and false)
+        else if (status[status_experience_mode])
         {
-            i = 0;
-            std::cout << "Cmd : " << cmd[pid_roll] << " " << data.rates[pid_roll] << "\n";
-        }
 
+            if (data.time_exp > exp_time_motor_start && data.time_exp < exp_time_motor_stop)
+            {
+                int cmd_exp = 100;
+                data.commands[cmd_throttle] = 1550;
+                data.commands_gen[entree_throttle] = 1400;
+		
+		cmd[pid_roll] = 0;
+
+                // cmd
+                if (data.time_exp > exp_time_cmd_start && data.time_exp < exp_time_cmd_stop)
+                {
+                    data.commands_gen[entree_roll] = cmd_exp;
+                    cmd[pid_roll] = cmd_exp;
+		}
+
+                float kp = data.controller_gains_rates[pid_roll];
+                data.pid_debug[0] = kp;
+                rate_c.update_pid(kp, 0, 0);
+                rate_c.update(cmd, data.rates, dt, data.pid_debug);
+
+
+                data.isArmed = true;
+                // rates
+            }
+
+            cmd[pid_pitch] = 0;
+            cmd[pid_yaw] = 0;
+        }
+        else
+        {
+            std::cout << "Stab no mode\n";
+        }
         cmd[pid_pitch] = 0;
         cmd[pid_yaw] = 0;
 
@@ -250,10 +291,11 @@ public:
         {
             if (data.stabilisation_mode != 5)
             {
-                data.motors_output[2] = data.commands[cmd_throttle] + cmd[pid_roll] - cmd[pid_pitch] - cmd[pid_yaw]; // motor 0
-                data.motors_output[0] = data.commands[cmd_throttle] - cmd[pid_roll] - cmd[pid_pitch] + cmd[pid_yaw]; // motor 1
-                data.motors_output[3] = data.commands[cmd_throttle] + cmd[pid_roll];                                 //commands[cmd_throttle] - cmd[pid_roll] * mixing + cmd[pid_pitch] * mixing - cmd[pid_yaw] * mixing; // motor 2
+                data.motors_output[2] = data.commands[cmd_throttle] + cmd[pid_roll];// - cmd[pid_pitch] - cmd[pid_yaw]; // motor 0
+                data.motors_output[0] = data.commands[cmd_throttle] - cmd[pid_roll];// - cmd[pid_pitch] + cmd[pid_yaw]; // motor 1
+                data.motors_output[3] = data.commands[cmd_throttle] - cmd[pid_roll];                                 //commands[cmd_throttle] - cmd[pid_roll] * mixing + cmd[pid_pitch] * mixing - cmd[pid_yaw] * mixing; // motor 2
                 data.motors_output[1] = data.commands[cmd_throttle] + cmd[pid_roll];
+               // std::cout << "danger : " << data.motors_output[0] << "\n";
             }
             else
             {

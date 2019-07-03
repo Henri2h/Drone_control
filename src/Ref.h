@@ -12,6 +12,11 @@
 #define pos_y 1
 #define pos_z 2
 
+#define entree_throttle 0
+#define entree_yaw 1
+#define entree_roll 2
+#define entree_pitch 3
+
 #define pid_pitch 0
 #define pid_roll 1
 #define pid_yaw 2
@@ -56,15 +61,20 @@
 #define status_gains_rate_kd 14
 #define status_gains_rate_ki 15
 
+#define status_experience_mode 16
+#define status_experience_time 17
+#define status_filter_mode 18
+#define status_filter_param 19
+
 // number of items
-#define status_length 16
+#define status_length 20
 
 #define order_Saving 0
 #define orders_DisplayGains 1
 
 #define grav 9.81
-#define pi 3.14159
 
+#define PI 3.1415926535
 // IMU
    /*
    Filter :
@@ -78,3 +88,10 @@
 #define IMU_Filter_usage_acc 1
 #define IMU_Filter_usage_gyr 2
 #define IMU_Filter_usage_both 3
+
+#define exp_time_start -4
+#define exp_time_motor_start -3
+#define exp_time_cmd_start 0
+#define exp_time_cmd_stop 7.5
+#define exp_time_motor_stop 7.5
+#define exp_time_end 10
