@@ -35,18 +35,27 @@ public:
 		//float cmd[3] = {0, 0, 0};   // command mapped
 
 	// saving
+	float controller_gains_rates[3] = {0, 1, 0};
 
-	int orders[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	int orders[10];
 	double status[status_length];
 
 	// adding a status save system : ease dvpt
 	int f_display_iterationscount = 6000;
-
+	
+	// time
+	std::chrono::time_point<std::chrono::system_clock> time_exp_start;
+	double time_exp;
 	~Data();
 };
 
 Data::Data(/* args */)
 {
+	for (size_t i = 0; i < status_length; i++)
+	{
+		this->status[i] = 0;
+	}
+	
 }
 
 Data::~Data()
