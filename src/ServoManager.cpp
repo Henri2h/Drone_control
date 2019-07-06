@@ -21,7 +21,7 @@ sudo ./Servo
 #include <unistd.h>
 #include <memory>
 
-#define SERVO_MIN 1250 /*mS*/
+#define SERVO_MIN 1000 //1250 /*mS*/
 #define SERVO_MAX 1750 /*mS*/
 #define MOTOR_COUNT 4
 
@@ -46,7 +46,7 @@ class ServoManager
 
     std::unique_ptr<RCOutput> pwm = get_rcout();
 
-  public:
+public:
     ServoManager()
     {
         if (getuid())
@@ -64,28 +64,40 @@ class ServoManager
         }
     }
 
-    int initialize(){
+    int initialize()
+    {
         for (size_t i = 0; i < 4; i++)
         {
             pwm->set_frequency(i, 50);
 
             if (!(pwm->enable(i)))
             {
+                FileManagement::Log("Servo manager", "could not enable");
                 return 1;
             }
         }
         return 0;
     }
 
-    void setDuty(Data data)
+    void setDuty(Data &data)
     {
 
         for (size_t i = 0; i < 4; i++)
         {
             int a = data.motors_output[i];
-            if (a < SERVO_MIN) a = SERVO_MIN;
-            if (a > SERVO_MAX) a = SERVO_MAX;
+            if (a < SERVO_MIN)
+                a = SERVO_MIN;
+            if (a > SERVO_MAX)
+                a = SERVO_MAX;
+            pwm->set_duty_cycle(i, a);
+        }
+    }
+    void zero()
+    {
 
+        for (size_t i = 0; i < 4; i++)
+        {
+            int a = 100;
             pwm->set_duty_cycle(i, a);
         }
     }
