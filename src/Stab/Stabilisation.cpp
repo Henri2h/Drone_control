@@ -33,13 +33,13 @@ private:
 
         if (data.stabilisation_mode != 0 and (cmd_mode_1 - cmd_mode_delta) < data.commands[cmd_flight_mode] and data.commands[cmd_flight_mode] < (cmd_mode_1 + cmd_mode_delta))
         {
-            std::cout << "[ STAB MODE ] : 1 : Rates mode"
+            std::cout << "[ STAB MODE ] : 0 : Rates mode"
                       << "\n";
             data.stabilisation_mode = 0;
         }
         else if (data.stabilisation_mode != 1 and (cmd_mode_2 - cmd_mode_delta) < data.commands[cmd_flight_mode] and data.commands[cmd_flight_mode] < (cmd_mode_2 + cmd_mode_delta))
         {
-            std::cout << "[ STAB MODE ] : 2 : Angle mode"
+            std::cout << "[ STAB MODE ] : 1 : Angle mode"
                       << "\n";
             data.stabilisation_mode = 1;
         }
@@ -51,19 +51,19 @@ private:
         }
         else if (data.stabilisation_mode != 2 and (cmd_mode_4 - cmd_mode_delta) < data.commands[cmd_flight_mode] and data.commands[cmd_flight_mode] < (cmd_mode_4 + cmd_mode_delta))
         {
-            std::cout << "[ STAB MODE ] : 4 : Essai indiciel"
+            std::cout << "[ STAB MODE ] : 2 : Essai indiciel"
                       << "\n";
             data.stabilisation_mode = 2;
         }
         else if (data.stabilisation_mode != 3 and (cmd_mode_5 - cmd_mode_delta) < data.commands[cmd_flight_mode] and data.commands[cmd_flight_mode] < (cmd_mode_5 + cmd_mode_delta))
         {
-            std::cout << "[ STAB MODE ] : 5 : Essai rampe"
+            std::cout << "[ STAB MODE ] : 3: Essai rampe"
                       << "\n";
             data.stabilisation_mode = 3;
         }
         if (data.stabilisation_mode != 4 and (cmd_mode_6 - cmd_mode_delta) < data.commands[cmd_flight_mode] and data.commands[cmd_flight_mode] < (cmd_mode_6 + cmd_mode_delta))
         {
-            std::cout << "[ STAB MODE ] : 6 : Essai sinusoidal"
+            std::cout << "[ STAB MODE ] : 4 : Essai sinusoidal"
                       << "\n";
             data.stabilisation_mode = 4;
         }
@@ -94,8 +94,8 @@ public:
         // map values
         data.entree[3] = data.commands[cmd_throttle];
 
-        data.commands_gen[entree_throttle] = 0;
-        data.commands_gen[entree_roll] = 0;
+        //data.commands_gen[entree_throttle] = 0;
+        //data.commands_gen[entree_roll] = 0;
 
         if (status[status_experience_mode] != 2)
         {
@@ -189,14 +189,17 @@ public:
                 }
 
                 // fix values
-                float kp_rate = mapValue(data.commands[cmd_kp], 922, 2077, 0, pid_gains_rate_max);
-                float kd_rate = mapValue(data.commands[cmd_ki], 921, 2077, 0, 2);
-
+                float kp_rate = mapValue(data.commands[cmd_kp], 922, 2077, 0, 1);
+                float kd_rate = mapValue(data.commands[cmd_kd], 922, 2077, 0, 1);
+                float ki_rate = mapValue(data.commands[cmd_ki], 921, 2077, 0, 1);
+                
                 data.status[status_gains_rate_kp] = kp_rate;
                 data.status[status_gains_rate_kd] = kd_rate;
+                data.status[status_gains_rate_ki] = ki_rate;
 
-                rate_c.update_pid(kp_rate, kd_rate);
+                rate_c.update_pid(kp_rate, kd_rate, ki_rate);
                 rate_c.update(cmd, data.rates, dt, data.pid_debug);
+                
                 if (i % 600 == 0 && showGains)
                 {
                     i = 0;
@@ -219,21 +222,20 @@ public:
                 int cmd_exp = 100;
                 data.commands[cmd_throttle] = 1550;
                 data.commands_gen[entree_throttle] = 1400;
-		
-		cmd[pid_roll] = 0;
+
+                cmd[pid_roll] = 0;
 
                 // cmd
                 if (data.time_exp > exp_time_cmd_start && data.time_exp < exp_time_cmd_stop)
                 {
                     data.commands_gen[entree_roll] = cmd_exp;
                     cmd[pid_roll] = cmd_exp;
-		}
+                }
 
                 float kp = data.controller_gains_rates[pid_roll];
                 data.pid_debug[0] = kp;
                 rate_c.update_pid(kp, 0, 0);
                 rate_c.update(cmd, data.rates, dt, data.pid_debug);
-
 
                 data.isArmed = true;
                 // rates
@@ -246,8 +248,6 @@ public:
         {
             std::cout << "Stab no mode\n";
         }
-        cmd[pid_pitch] = 0;
-        cmd[pid_yaw] = 0;
 
         // motor commands
         /*
@@ -291,11 +291,11 @@ public:
         {
             if (data.stabilisation_mode != 5)
             {
-                data.motors_output[2] = data.commands[cmd_throttle] + cmd[pid_roll];// - cmd[pid_pitch] - cmd[pid_yaw]; // motor 0
-                data.motors_output[0] = data.commands[cmd_throttle] - cmd[pid_roll];// - cmd[pid_pitch] + cmd[pid_yaw]; // motor 1
-                data.motors_output[3] = data.commands[cmd_throttle] - cmd[pid_roll];                                 //commands[cmd_throttle] - cmd[pid_roll] * mixing + cmd[pid_pitch] * mixing - cmd[pid_yaw] * mixing; // motor 2
-                data.motors_output[1] = data.commands[cmd_throttle] + cmd[pid_roll];
-               // std::cout << "danger : " << data.motors_output[0] << "\n";
+                data.motors_output[2] = data.commands[cmd_throttle] + cmd[pid_roll] - cmd[pid_pitch] - cmd[pid_yaw]; // motor 0
+                data.motors_output[0] = data.commands[cmd_throttle] - cmd[pid_roll] - cmd[pid_pitch] + cmd[pid_yaw]; // motor 1
+                data.motors_output[1] = data.commands[cmd_throttle] + cmd[pid_roll] + cmd[pid_pitch] + cmd[pid_yaw];
+                data.motors_output[3] = data.commands[cmd_throttle] - cmd[pid_roll] + cmd[pid_pitch] - cmd[pid_yaw]; // motor 2
+                                                                                                                     // std::cout << "danger : " << data.motors_output[0] << "\n";
             }
             else
             {
