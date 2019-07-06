@@ -18,12 +18,14 @@ All angle are expressed in degrees
 #include <string>
 #include <memory>
 
+// filter
+#include "Filter.cpp"
+
 #define AXIS_NB 3       // three axis
 #define ARR_ACCEL_POS 0 // position of accel data in array
 #define ARR_GYRO_POS 3  // position of gyro data in array
 #define ARR_MAG_POS 6   // position of mag data in array
 
-#define PI 3.1415926535
 
 class IMU
 {
@@ -137,6 +139,10 @@ class IMU
         computeOffsets();
     }
 
+    void setMode(Data& data){
+       filterUsage = data.status[status_filter_mode];
+    }
+
     void update()
     {
         sensor->update();
@@ -155,12 +161,12 @@ class IMU
 
             if (filterUsage == IMU_Filter_usage_gyr || filterUsage == IMU_Filter_usage_both)
             {
-                imu_values[i + ARR_GYRO_POS] = doFilter(imu_values[i + ARR_GYRO_POS], rates_old[i]);
+                imu_values[i + ARR_GYRO_POS] = Filter::low_pass_filter(imu_values[i + ARR_GYRO_POS], rates_old[i]);
                 rates_old[i] = imu_values[i + ARR_GYRO_POS];
             }
             if (filterUsage == IMU_Filter_usage_acc || filterUsage == IMU_Filter_usage_both)
             {
-                imu_values[i] = doFilter(imu_values[i], accel_old[i]);
+                imu_values[i] = Filter::low_pass_filter(imu_values[i], accel_old[i]);
                 accel_old[i] = imu_values[i];
             }
         }
