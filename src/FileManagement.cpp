@@ -67,6 +67,9 @@ void FileManagement::saveData(Data& data, float t)
 
     if (data.status[status_Saving] == 1)
     {
+        if(data.status[status_experience_mode] == 2){
+            t = data.time_exp; // we are doing an experiment so use this time
+        }
         // save data in a csv format
         FileManagement::myfile << t << sep
                                << data.stabilisation_mode << sep

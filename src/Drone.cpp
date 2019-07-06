@@ -93,6 +93,9 @@ void setup()
 	remote = std::make_shared<Remote>();
 
 	servo->initialize();
+	//usleep(10000);
+	servo->zero();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	stab->initialize(data.status);
 
@@ -109,7 +112,6 @@ void setup()
 
 	FileManagement::Log("Main : Setup", "Initializated");
 	led->setOK();
-
 }
 
 void loop()
@@ -119,6 +121,7 @@ void loop()
 	auto now = TimeM::now();
 
 	// ************ IMU : update **********
+	imu->setMode(data);
 	imu->update(); // get imu data just after timing
 
 	// ************ rc : read **********
@@ -128,14 +131,43 @@ void loop()
 	// process informations
 
 	// before start
+	if (data.status[status_experience_mode] == 1)
+	{
+		data.status[status_experience_mode] = 2;
+		FileManagement::Log("MAIN", "Experience launched");
+		data.time_exp_start = TimeM::now();
+
+		// we should save :
+		data.orders[0] = 1;
+	}
+
 	double now_n = chrono::duration<double, nano>(now - time_start).count();
 
-	// since last iteration
 	double diff_nano = chrono::duration<double, nano>(now - t_last).count();
+	// since last iteration
+
+	if (data.status[status_experience_mode] == 2)
+	{
+		double time_exp_int = chrono::duration<double, nano>(now - data.time_exp_start).count();
+		data.time_exp = time_exp_int * pow(10, -9) + exp_time_start;
+		data.status[status_experience_time] = data.time_exp; // to display
+	}
+
 	t_last = now;
 	// dt : convert nano to seconds
 	float dt = diff_nano * pow(10, -9.0); // back in seconds
-	t = now_n * pow(10, -9.0);            // back in seconds
+	t = now_n * pow(10, -9.0);			  // back in seconds
+										  // back in seconds -2 because we start from past
+
+	if (data.status[status_experience_mode] != 0 && data.time_exp > exp_time_end)
+	{
+		data.status[status_experience_mode] = 0;
+		FileManagement::Log("MAIN", "Experience ended");
+		data.orders[status_Saving] = 0;
+		data.status[status_experience_time] = 0;
+		data.orders[0] = 0; // stop saving
+	}
+
 	// ************ TIME : calculus : end **********
 
 	// ************ update imu ************
@@ -168,18 +200,8 @@ void loop()
 
 		float f = f_display_iterationscount / (diff * pow(10, -9.0));
 		cout << "[ MAIN ] : f : " << f << "Hz "
-			<< "\n";
+			 << "\n";
 		last = now;
-		if (imu->getFilterUsage() == IMU_Filter_usage_none)
-		{
-			cout << "both\n";
-			imu->setFilterUsage(IMU_Filter_usage_both);
-		}
-		else
-		{
-			cout << "none\n";
-			imu->setFilterUsage(IMU_Filter_usage_none);
-		}
 	}
 	// end
 }
@@ -188,7 +210,7 @@ void loop()
 auto last_call = TimeM::now();
 bool useTimer = true;
 int main(int argc, char *argv[])
-{                                //Hz
+{								 //Hz
 	double f_dt = 1 / frequency; //seconds
 	long long int f_dt_n = f_dt * pow(10, 9);
 	setup();
@@ -209,7 +231,7 @@ int main(int argc, char *argv[])
 				// if error is superior to 10 micro second, reset clock
 				if (pow(10, -3) * chrono::duration<double, nano>(TimeM::now() - last_call).count() > 9000 * f_dt)
 				{
-					FileManagement::Log("MAIN", "Clock reset" + to_string(chrono::duration<double, nano>(TimeM::now() - last_call).count()) + " nanoseconds");
+					FileManagement::Log("MAIN", "Clock reset : " + to_string(chrono::duration<double, nano>(TimeM::now() - last_call).count()) + " nanoseconds");
 					// cout << pow(10, -3) * chrono::duration<double, nano>(TimeM::now() - last_call).count() << " " << 9000 *f_dt << "\n";
 					last_call = TimeM::now();
 				}
