@@ -192,14 +192,14 @@ public:
                 float kp_rate = mapValue(data.commands[cmd_kp], 922, 2077, 0, 1);
                 float kd_rate = mapValue(data.commands[cmd_kd], 922, 2077, 0, 1);
                 float ki_rate = mapValue(data.commands[cmd_ki], 921, 2077, 0, 1);
-
+                
                 data.status[status_gains_rate_kp] = kp_rate;
                 data.status[status_gains_rate_kd] = kd_rate;
                 data.status[status_gains_rate_ki] = ki_rate;
 
                 rate_c.update_pid(kp_rate, kd_rate, ki_rate);
                 rate_c.update(cmd, data.rates, dt, data.pid_debug);
-
+                
                 if (i % 600 == 0 && showGains)
                 {
                     i = 0;
@@ -257,11 +257,11 @@ public:
     self.esc.v3 = ui.throttle + pidRoll - pidPitch + pidYaw
     */
         /*
-        2     0
+        0     1
          \   /
           |D|
          /   \
-        1     3
+        3     2
         // mixing system of ardupilot
         */
 
@@ -291,19 +291,11 @@ public:
         {
             if (data.stabilisation_mode != 5)
             {
-                /*
-        2     0
-         \   /
-          |D|
-         /   \
-        1     3
-        */
-                data.motors_output[2] = data.commands[cmd_throttle] + cmd[pid_roll] - cmd[pid_pitch] + cmd[pid_yaw]; // motor 0
-                data.motors_output[0] = data.commands[cmd_throttle] - cmd[pid_roll] - cmd[pid_pitch] - cmd[pid_yaw]; // motor 1
-                data.motors_output[3] = data.commands[cmd_throttle] - cmd[pid_roll] + cmd[pid_pitch] + cmd[pid_yaw];
-                data.motors_output[1] = data.commands[cmd_throttle] + cmd[pid_roll] + cmd[pid_pitch] - cmd[pid_yaw];
-                // motor 2
-                // std::cout << "danger : " << data.motors_output[0] << "\n";
+                data.motors_output[2] = data.commands[cmd_throttle] + cmd[pid_roll] - cmd[pid_pitch] - cmd[pid_yaw]; // motor 0
+                data.motors_output[0] = data.commands[cmd_throttle] - cmd[pid_roll] - cmd[pid_pitch] + cmd[pid_yaw]; // motor 1
+                data.motors_output[1] = data.commands[cmd_throttle] + cmd[pid_roll] + cmd[pid_pitch] + cmd[pid_yaw];
+                data.motors_output[3] = data.commands[cmd_throttle] - cmd[pid_roll] + cmd[pid_pitch] - cmd[pid_yaw]; // motor 2
+                                                                                                                     // std::cout << "danger : " << data.motors_output[0] << "\n";
             }
             else
             {
