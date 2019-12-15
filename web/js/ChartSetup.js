@@ -19,31 +19,40 @@ worker.addEventListener('message', function (e) {
 
     }
     else{
-        for (let index = 0; index < 18; index++) {
+        /*for (let index = 0; index < 18; index++) {
             document.getElementById("result_" + index).innerHTML = e.data[index + 1];
-        }
+        }*/
+        vueApp.displayGains = e.data[1];
+        vueApp.saving = e.data[0];
+        
+        vueApp.pressure = e.data[10];
+        vueApp.temp = e.data[11];
+
+        vueApp.gps_fix = e.data[2];
+        vueApp.gps_latitude = e.data[3];
+        vueApp.gps_longitude = e.data[4];
 
         var imode = parseInt(e.data[12]);
         if(imode == 0){
-            document.getElementById("result_mode").innerHTML = "Rates mode";
+            vueApp.mode = "Rates mode";
         }
         else if(imode == 1){
-            document.getElementById("result_mode").innerHTML = "Angle mode";
+            vueApp.mode = "Angle mode";
         }
         else if(imode == 2){ 
-            document.getElementById("result_mode").innerHTML = "Essai indiciel";
+            vueApp.mode = "Essai indiciel";
         }
         else if(imode == 3){ 
-            document.getElementById("result_mode").innerHTML = "Essai rampe";
+            vueApp.mode = "Essai rampe";
         }
         else if(imode == 4){
-            document.getElementById("result_mode").innerHTML = "Essai sinusoidal";
+            vueApp.mode = "Essai sinusoidal";
         }
         else if(imode == 5){
-            document.getElementById("result_mode").innerHTML = "Direct control";
+            vueApp.mode = "Direct control";
         }
         else if(imode == 6){
-            document.getElementById("result_mode").innerHTML = "Unknown";
+            vueApp.mode = "Unknown";
         }
     }
     iter++;
@@ -104,7 +113,7 @@ var AccelerationPlot = new Chart(E_Acceleration_plot, {
                 tension: 0 // disables bezier curves
             }
         },
-        showLines: false,
+        showLines: true,
         scales: {
             xAxes: [{
                 ticks: {
@@ -158,7 +167,7 @@ var GyrationPlot = new Chart(E_Gyration_plot, {
                 tension: 0 // disables bezier curves
             }
         },
-        showLines: false,
+        showLines: true,
         scales: {
             xAxes: [{
                 ticks: {
@@ -185,6 +194,11 @@ async function addPointAccel(Data) {
     }
 
     AccelerationPlot.update();
+    
+    // update vue
+    vueApp.accel_x = Data[9];
+    vueApp.accel_y = Data[10];
+    vueApp.accel_z = Data[11];
 
     if (iter > 90) {
         removeData(AccelerationPlot);

@@ -6,20 +6,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hello Bulma!</title>
   <link rel="stylesheet" href="css/bulma.min.css">
-  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-  
+
+  <script defer src="js/vendor/fontawesome_v5.3.1.js"></script>
+
   <link rel="stylesheet" type="text/css" href="css/Chart.min.css">
 
   <script defer src="js/vendor/vue.js"></script>
   <script defer src="js/vendor/Chart.js"></script>
   <script defer src="js/vendor/plotly.js"></script>
-
+  <script defer src="js/index.js"></script>
   <script defer src="js/ChartSetup.js"></script>
 </head>
 
 <body>
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://henri2h.fr"><strong>Drone control</strong></a>
 
-  <section class="hero is-primary">
+      <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navMenu">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+
+    <div id="navMenu" class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item">
+          Home
+        </a>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="buttons">
+            <a class="button is-danger">
+              Danger zone
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero is-info">
     <div class="hero-body">
       <div class="container">
         <h1 class="title">
@@ -31,22 +61,9 @@
       </div>
     </div>
   </section>
-
   <section class="section">
-    <div class="container">
-      <h1 class="title">
-        Hello World
-      </h1>
-      <p class="subtitle">
-        My first website with <strong>Bulma</strong>!
-      </p>
-    </div>
+    <h2 class="title">Plots :</h2>
   </section>
-
-  <div class="container">
-    <div id="tester"></div>
-  </div>
-
   <div class="columns">
     <div class="column">
       <canvas id="gyrationPlot"></canvas>
@@ -56,61 +73,159 @@
     </div>
   </div>
 
-  <div class="section">
+  <div class="section" id="vue-data">
+    <h2 class="title">Data :</h2>
     <div class="columns">
-      Saving :
-      <div class="column" id="result_0"></div>
-      Display gains :
-      <div class="column" id="result_1"></div>
-      GPS Fix :
-      <div class="column" id="result_2"></div>
-      GPS Latitude :
-      <div class="column" id="result_3"></div>
-      GPS Longitude :
-      <div class="column" id="result_4"></div>
-      <div class="column" id="result_5"></div>
-      <div class="column" id="result_6"></div>
-      <div class="column" id="result_7"></div>
-      <div class="column" id="result_8"></div>
+      <div class="column">
+        <div class="box">
+          <article class="media">
+            <div class="media-content">
+              <div class="content">
+
+                <h2 class="title is-4">Acceleration</h2>
+                <strong>Acc x :</strong> {{accel_x}} <strong>m/s^2</strong><br>
+                <strong>Acc y :</strong> {{accel_y}} <strong>m/s^2</strong><br>
+                <strong>Acc z :</strong> {{accel_z}} <strong>m/s^2</strong>
+
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="column">
+        <div class="box">
+          <article class="media">
+            <div class="media-content">
+              <div class="content">
+
+                <h2 class="title is-4">Gyration</h2>
+                <strong>Gyration x :</strong> {{gyr_x}}<br>
+                <strong>Gyration y :</strong> {{gyr_y}}<br>
+                <strong>Gyration z :</strong> {{gyr_z}}
+
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="column">
+        <div class="box">
+          <article class="media">
+            <div class="media-content">
+              <div class="content">
+
+                <h2 class="title is-4">GPS</h2>
+                <strong>Fix</strong> {{gps_fix}}<br>
+                <strong>Latitude</strong> {{gps_latitude}}<br>
+                <strong>Longitude</strong> {{gps_longitude}}<br>
+                <strong>Precision</strong> {{accel_z}}<br>
+                <strong>Precision</strong> {{accel_z}}<br>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="column">
+        <div class="box">
+          <article class="media">
+            <div class="media-content">
+              <div class="content">
+                <h2 class="title is-4">Informations</h2>
+                <strong>{{message}}</strong><br>
+                <strong>Mode :</strong> {{mode}}<br>
+                <strong>Saving :</strong> {{saving}}<br>
+                <strong>Display gains :</strong> {{displayGains}}
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="column">
+        <div class="box">
+          <article class="media">
+            <div class="media-content">
+              <div class="content">
+
+                <h2 class="title is-4">Informations</h2>
+                <strong>Temp :</strong> {{temp}}<br>
+                <strong>pressure :</strong> {{pressure}}<br>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="column">
+        <div class="box">
+          <article class="media">
+            <div class="media-content">
+              <div class="content">
+
+                <h2 class="title is-4">Controler</h2>
+                <strong>Kp :</strong> {{kp}}<br>
+                <strong>Ki :</strong> {{ki}}<br>
+                <strong>Kd :</strong> {{kd}}<br>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
     </div>
-    <div class="columns">
-      <p>Pression : </p>
-      <div class="column" id="result_9"></div>
-      <p>Température : </p>
-      <div class="column" id="result_10"></div>
+    <!--
+    <div>
+      <div class="columns">
+        Saving :
+        <div class="column" id="result_0"></div>
+        Display gains :
+        <div class="column" id="result_1"></div>
+        GPS Fix :
+        <div class="column" id="result_2"></div>
+        GPS Latitude :
+        <div class="column" id="result_3"></div>
+        GPS Longitude :
+        <div class="column" id="result_4"></div>
+        <div class="column" id="result_5"></div>
+        <div class="column" id="result_6"></div>
+        <div class="column" id="result_7"></div>
+        <div class="column" id="result_8"></div>
+      </div>
+      <div class="columns">
+        <p>Pression : </p>
+        <div class="column" id="result_9"></div>
+        <p>Température : </p>
+        <div class="column" id="result_10"></div>
 
-      <p>Mode : </p>
-      <div class="column" id="result_11"></div>
-      <div class="column" id="result_mode"></div>
+        <p>Mode : </p>
+        <div class="column" id="result_11"></div>
+        <div class="column" id="result_mode"></div>
+      </div>
+
+      <div class="columns">
+
+        <div class="column" id="result_12"></div>
+
+        kp:
+        <div class="column" id="result_13"></div>
+
+        kd:
+        <div class="column" id="result_14"></div>
+
+        ki:
+        <div class="column" id="result_15"></div>
+
+        <div class="column" id="result_16"></div>
+        <div class="column" id="result_17"></div>
+        <div class="column" id="result_18"></div>
+        <div class="column" id="result_19"></div>
+      </div>
+      <div id="result_iter"></div>
     </div>
-
-    <div class="columns">
-
-      <div class="column" id="result_12"></div>
-
-      kp:
-      <div class="column" id="result_13"></div>
-
-      kd:
-      <div class="column" id="result_14"></div>
-
-      ki:
-      <div class="column" id="result_15"></div>
-
-      <div class="column" id="result_16"></div>
-      <div class="column" id="result_17"></div>
-      <div class="column" id="result_18"></div>
-      <div class="column" id="result_19"></div>
-    </div>
-    <div id="result_iter"></div>
+  -->
   </div>
 
   <footer class="footer">
     <div class="content has-text-centered">
       <p>
-        <strong>Bulma</strong> by <a href="https://jgthms.com">Jeremy Thomas</a>. The source code is licensed
-        <a href="http://opensource.org/licenses/mit-license.php">MIT</a>. The website content
-        is licensed <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY NC SA 4.0</a>.
+        <strong>Drone controler</strong> by <a href="https://henri2h.fr">Henri2h</a>.
       </p>
     </div>
   </footer>

@@ -1,0 +1,39 @@
+body {
+    margin: 0;
+    padding: 0;
+    font: 10px sans-serif;
+  }
+
+  text {
+    fill: rgb(0, 0, 0);
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #333;
+    shape-rendering: crispEdges;
+  }
+
+  .axis path {
+    stroke: rgb(53, 39, 39);
+  }
+
+  .line {
+    fill: none;
+    stroke: rgb(0, 0, 0);
+    stroke-width: 2px;
+  }
+
+  .data {
+    stroke: rgb(0, 0, 0);
+    stroke-width: 2px;
+  }
+
+  .average-50 {
+    stroke: rgb(255, 0, 0);
+  }
+
+  .average-25 {
+    stroke: blue;
+  }
