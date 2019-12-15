@@ -1,5 +1,5 @@
 console.log("started");
-var exampleSocket = new WebSocket("ws://192.168.0.100:8766");
+var exampleSocket = new WebSocket("ws://192.168.0.14:8766");
 
 var Data = [];
 

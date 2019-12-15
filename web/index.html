@@ -7,14 +7,14 @@
   <title>Hello Bulma!</title>
   <link rel="stylesheet" href="css/bulma.min.css">
   <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-
-
+  
   <link rel="stylesheet" type="text/css" href="css/Chart.min.css">
 
   <script defer src="js/vendor/vue.js"></script>
+  <script defer src="js/vendor/Chart.js"></script>
+  <script defer src="js/vendor/plotly.js"></script>
 
-  <script defer src="js/Chart.js"></script>
-  <script defer src="js/plotly.js"></script>
+  <script defer src="js/ChartSetup.js"></script>
 </head>
 
 <body>
@@ -23,7 +23,7 @@
     <div class="hero-body">
       <div class="container">
         <h1 class="title">
-         Drone Remote Controll
+          Drone Remote Controll
         </h1>
         <h2 class="subtitle">
           Primary subtitle
@@ -58,13 +58,13 @@
 
   <div class="section">
     <div class="columns">
-      Saving : 
+      Saving :
       <div class="column" id="result_0"></div>
-      Display gains : 
+      Display gains :
       <div class="column" id="result_1"></div>
-      GPS Fix : 
+      GPS Fix :
       <div class="column" id="result_2"></div>
-      GPS Latitude : 
+      GPS Latitude :
       <div class="column" id="result_3"></div>
       GPS Longitude :
       <div class="column" id="result_4"></div>
@@ -79,24 +79,24 @@
       <p>Température : </p>
       <div class="column" id="result_10"></div>
 
-<p>Mode : </p>
+      <p>Mode : </p>
       <div class="column" id="result_11"></div>
       <div class="column" id="result_mode"></div>
     </div>
 
     <div class="columns">
-      
+
       <div class="column" id="result_12"></div>
-      
+
       kp:
       <div class="column" id="result_13"></div>
-      
+
       kd:
       <div class="column" id="result_14"></div>
-      
+
       ki:
       <div class="column" id="result_15"></div>
-      
+
       <div class="column" id="result_16"></div>
       <div class="column" id="result_17"></div>
       <div class="column" id="result_18"></div>
@@ -117,6 +117,5 @@
 
 </body>
 
-<script src="js/ChartSetup.js" async></script>
 
 </html>

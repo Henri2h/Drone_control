@@ -1,3 +1,7 @@
+localStorage.websocket_url = "ws://192.168.0.100:8766";
+
+console.log("Started chart setup");
+
 var E_Gyration_plot = document.getElementById('gyrationPlot'); // chart
 var E_Acceleration_plot = document.getElementById('accelerationPlot'); // chart
 
