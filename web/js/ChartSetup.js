@@ -7,24 +7,29 @@ var E_Acceleration_plot = document.getElementById('accelerationPlot'); // chart
 
 var worker = new Worker('js/Worker_Client.js');
 var iter = 0;
+Accel = []
 
+
+var time_start = new Date();
 // Setup an event listener that will handle messages received from the worker.
 worker.addEventListener('message', function (e) {
     // Log the workers message.
     if (e.data[0] == "FStatus") {
-        // parallel(e.data);
+        //parallel(e.data);
 
-        addPointAccel(e.data);
-        addPointGyr(e.data);
+        //addPointAccel(e.data);
+        //addPointGyr(e.data);
 
+        Accel.push([parseFloat(e.data[9]), parseFloat(e.data[10]), parseFloat(e.data[11])]);
+
+        vueApp.accel_x = parseFloat(e.data[9]).toPrecision(4);
+        vueApp.accel_y = parseFloat(e.data[10]).toPrecision(4);
+        vueApp.accel_z = parseFloat(e.data[11]).toPrecision(4);
     }
-    else{
-        /*for (let index = 0; index < 18; index++) {
-            document.getElementById("result_" + index).innerHTML = e.data[index + 1];
-        }*/
+    else {
         vueApp.displayGains = e.data[1];
         vueApp.saving = e.data[0];
-        
+
         vueApp.pressure = e.data[10];
         vueApp.temp = e.data[11];
 
@@ -33,27 +38,36 @@ worker.addEventListener('message', function (e) {
         vueApp.gps_longitude = e.data[4];
 
         var imode = parseInt(e.data[12]);
-        if(imode == 0){
+        if (imode == 0) {
             vueApp.mode = "Rates mode";
         }
-        else if(imode == 1){
+        else if (imode == 1) {
             vueApp.mode = "Angle mode";
         }
-        else if(imode == 2){ 
+        else if (imode == 2) {
             vueApp.mode = "Essai indiciel";
         }
-        else if(imode == 3){ 
+        else if (imode == 3) {
             vueApp.mode = "Essai rampe";
         }
-        else if(imode == 4){
+        else if (imode == 4) {
             vueApp.mode = "Essai sinusoidal";
         }
-        else if(imode == 5){
+        else if (imode == 5) {
             vueApp.mode = "Direct control";
         }
-        else if(imode == 6){
+        else if (imode == 6) {
             vueApp.mode = "Unknown";
         }
+    }
+
+    var now = new Date();
+    var dt = now - time_start;
+    if (iter == 50) {
+        vueApp.frequency = (iter/dt*1000).toPrecision(4);
+        console.log(dt + " : " + iter + " : " + iter / dt * 1000);
+        time_start = new Date();
+        iter = 0;
     }
     iter++;
 }, false);
@@ -194,11 +208,6 @@ async function addPointAccel(Data) {
     }
 
     AccelerationPlot.update();
-    
-    // update vue
-    vueApp.accel_x = Data[9];
-    vueApp.accel_y = Data[10];
-    vueApp.accel_z = Data[11];
 
     if (iter > 90) {
         removeData(AccelerationPlot);

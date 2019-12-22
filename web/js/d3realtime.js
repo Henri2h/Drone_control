@@ -1,20 +1,16 @@
 let h = 200;//window.innerHeight;
-let w = 500;//window.innerWidth;
+let w = window.innerWidth;
 
 let time = 0;
 let num = 300;
 
-let noise = new SimplexNoise();
-let seed = 50 + 100 * Math.random();
-let data = [seed];
-let averages_50 = [0];
-let averages_25 = [0];
-let deltas = [seed];
+let accel_x = [0];
+let accel_y = [0];
+let accel_z = [0];
 
-let latestData = [seed];
-let latestAverages_50 = [0];
-let latestAverages_25 = [0];
-let latestDeltas = [seed];
+let latestAccel_x = [0];
+let latestAccel_y = [0];
+let latestAccel_z = [0];
 
 let x = d3.scale.linear().range([0, w - 40]);
 let y = d3.scale.linear().range([h - 40, 0]);
@@ -38,8 +34,8 @@ let line = d3.svg.line()
   .y(d => y(d));
 
 let svg = d3.select('#charts').append('svg')
-  .attr({width: w, height: h})
-.append('g')
+  .attr({ width: "100%", height: h })
+  .append('g')
   .attr('transform', 'translate(30, 20)');
 
 let $xAxis = svg.append('g')
@@ -51,67 +47,70 @@ let $yAxis = svg.append('g')
   .attr('class', 'y axis')
   .call(yAxis);
 
-let $data = svg.append('path')
-  .attr('class', 'line data');
+let $latestAccel_x = svg.append('path')
+  .attr('class', 'line accel-x');
 
-let $averages_50 = svg.append('path')
-  .attr('class', 'line average-50');
+let $latestAccel_y = svg.append('path')
+  .attr('class', 'line accel-y');
 
-let $averages_25 = svg.append('path')
-  .attr('class', 'line average-25');
+let $latestAccel_z = svg.append('path')
+  .attr('class', 'line accel-z');
 
 
 let legend = svg.append('g')
   .attr('transform', `translate(20, 20)`)
   .selectAll('g')
-  .data([['Value', '#000'], ['Trailing Average - 50', '#0ff'], ['Trailing Average - 25', '#ff0']])
+  .data([['Accel x', '#000'], ['Accel y', '#0ff'], ['Accel z', '#ff0']])
   .enter()
-    .append('g');
+  .append('g');
 
-  legend
-    .append('circle')
-    .attr('fill', d => d[1])
-    .attr('r', 5)
-    .attr('cx', 0)
-    .attr('cy', (d, i) => i * 15);
+legend
+  .append('circle')
+  .attr('fill', d => d[1])
+  .attr('r', 5)
+  .attr('cx', 0)
+  .attr('cy', (d, i) => i * 15);
 
-  legend
-    .append('text')
-    .text(d => d[0])
-    .attr('transform', (d, i) => `translate(10, ${i * 15 + 4})`);
+legend
+  .append('text')
+  .text(d => d[0])
+  .attr('transform', (d, i) => `translate(10, ${i * 15 + 4})`);
 
 function tick() {
-  time++;
-  data[time] = Math.cos(time/10);
-  averages_25[time] = Math.sin(time/10);
-  averages_50[time] = Math.sin(time)*Math.sin(time/100);
-  
 
-  deltas[time] = data[time] - data[time - 1];
+  if (Accel.length > 0) {
+    time++;
+    accel_x[time] = Accel[0][0];
+    accel_y[time] = Accel[0][1];
+    accel_z[time] = Accel[0][2];
+    Accel.shift();
 
-  if (time <= num) {
-    latestData = data.slice(-num);
-    latestAverages_50 = averages_50.slice(-num);
-    latestAverages_25 = averages_25.slice(-num);
-    latestDeltas = deltas.slice(-num);
+    if (time <= num) {
+      latestAccel_x = accel_x.slice(-num);
+      latestAccel_y = accel_y.slice(-num);
+      latestAccel_z = accel_z.slice(-num);
+    }
+    else {
+      latestAccel_x.shift();
+      latestAccel_y.shift();
+      latestAccel_z.shift();
+
+      latestAccel_x.push(accel_x[time]);
+      latestAccel_y.push(accel_y[time]);
+      latestAccel_z.push(accel_z[time]);
+    }
+    return true;
   }
-  else {
-    latestData.shift();
-    latestAverages_50.shift();
-    latestAverages_25.shift();
-    latestDeltas.shift();
-    latestData.push(data[time]);
-    latestAverages_50.push(averages_50[time]);
-    latestAverages_25.push(averages_25[time]);
-    latestDeltas.push(deltas[time]);
-  }
+  return false;
+
+
 }
 
 function update() {
   x.domain([time - num, time]);
-  let yDom = d3.extent(latestData);
-  yDom[0] = -1.5;//Math.max(yDom[0] - 1, 0);
-  yDom[1] = 1.5;
+  let yDom = d3.extent(latestAccel_x);
+  yDom[0] = -15;//Math.max(yDom[0] - 1, 0);
+  yDom[1] = 15;
   y.domain(yDom);
 
   $xAxis
@@ -120,27 +119,22 @@ function update() {
   $yAxis
     .call(yAxis);
 
-  $data
-    .datum(latestData)
+  $latestAccel_x
+    .datum(latestAccel_x)
     .attr('d', line);
 
-  $averages_50
-    .datum(latestAverages_50)
+  $latestAccel_y
+    .datum(latestAccel_y)
     .attr('d', line);
 
-  $averages_25
-    .datum(latestAverages_25)
+  $latestAccel_z
+    .datum(latestAccel_z)
     .attr('d', line);
 
 }
-
-for (let i = 0; i < num + 50; i++) {
-  tick();
-}
-
-update();
 
 setInterval(() => {
-  tick();
-  update();
-}, 10);
+  if(tick()){
+    update();
+  }
+}, 1);

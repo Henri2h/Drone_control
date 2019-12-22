@@ -76,27 +76,30 @@ exampleSocket.onopen = function (event) {
 }
 
 
-var mode = true;
+var mode = 0;
 function update() {
-if(iter >= 0){    if (readStatus) {
-        if (mode == true) {
-            mode = false;
-            getStatus();
+    if (iter >= 0) {
+        if (readStatus) {
+            
+            mode++;
+            if (mode < 8) {
+                getFStatus();
+            }
+            else {
+                getStatus();
+                mode = 0;
+            }
+            iter++;
         }
         else {
-            mode = true;
-            getFStatus();
+            // console.log("Wait...");
         }
-        iter++;
     }
     else {
-        // console.log("Wait...");
-    }}
-	else{
-	Data[0] = iter;
-setReadStatusTrue();	
-	}
+        Data[0] = iter;
+        setReadStatusTrue();
+    }
 }
 
-var x = setInterval(update, 1);
+var x = setInterval(update, 0);
 

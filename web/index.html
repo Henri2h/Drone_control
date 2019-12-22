@@ -16,6 +16,10 @@
   <script defer src="js/vendor/plotly.js"></script>
   <script defer src="js/index.js"></script>
   <script defer src="js/ChartSetup.js"></script>
+
+  <link rel="stylesheet" type="text/css" href="css/d3realtime.css">
+  <script defer src="js/vendor/d3.min.js"></script>
+  <script defer src="js/d3realtime.js"></script>
 </head>
 
 <body>
@@ -61,10 +65,16 @@
       </div>
     </div>
   </section>
+
   <section class="section">
     <h2 class="title">Plots :</h2>
+
+    <div class="" id="charts">
+
+    </div>
   </section>
-  <div class="columns">
+
+  <div class="columns is-hidden">
     <div class="column">
       <canvas id="gyrationPlot"></canvas>
     </div>
@@ -72,6 +82,8 @@
       <canvas id="accelerationPlot"></canvas>
     </div>
   </div>
+
+ 
 
   <div class="section" id="vue-data">
     <h2 class="title">Data :</h2>
@@ -134,7 +146,8 @@
                 <strong>{{message}}</strong><br>
                 <strong>Mode :</strong> {{mode}}<br>
                 <strong>Saving :</strong> {{saving}}<br>
-                <strong>Display gains :</strong> {{displayGains}}
+                <strong>Display gains :</strong> {{displayGains}}<br>
+                <strong>Frequency :</strong> {{frequency}} Hz
               </div>
             </div>
           </article>
@@ -220,11 +233,25 @@
       <div id="result_iter"></div>
     </div>
   -->
+    <h2 class="title">Adress :</h2>
+    <div class="field has-addons">
+      <div class="control">
+        <input class="input" type="text" v-model="host" placeholder="Find a repository">
+      </div>
+      <div class="control">
+        <a class="button is-info">
+          Set
+        </a>
+      </div>
+    </div>
   </div>
+
+
 
   <footer class="footer">
     <div class="content has-text-centered">
       <p>
+        Web Version : <strong>1.0.0</strong><br>
         <strong>Drone controler</strong> by <a href="https://henri2h.fr">Henri2h</a>.
       </p>
     </div>
