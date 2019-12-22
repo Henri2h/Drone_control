@@ -1,4 +1,7 @@
-localStorage.websocket_url = "ws://192.168.0.100:8766";
+
+if(localStorage.getItem("websocket_url") == null){
+    localStorage.websocket_url = "ws://"+window.location.hostname+":8766";
+}
 
 console.log("Started chart setup");
 
@@ -6,6 +9,7 @@ var E_Gyration_plot = document.getElementById('gyrationPlot'); // chart
 var E_Acceleration_plot = document.getElementById('accelerationPlot'); // chart
 
 var worker = new Worker('js/Worker_Client.js');
+worker.postMessage(localStorage.websocket_url);
 var iter = 0;
 Accel = []
 

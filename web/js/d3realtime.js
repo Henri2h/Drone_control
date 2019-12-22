@@ -102,8 +102,6 @@ function tick() {
     return true;
   }
   return false;
-
-
 }
 
 function update() {
@@ -134,7 +132,7 @@ function update() {
 }
 
 setInterval(() => {
-  if(tick()){
+  if (tick()) {
     update();
   }
 }, 1);

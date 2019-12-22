@@ -1,5 +1,10 @@
 console.log("started");
-var exampleSocket = new WebSocket("ws://192.168.0.14:8766");
+
+// web socket
+var exampleSocket; //= new WebSocket("ws://192.168.0.14:8766");
+
+var connected = false;
+var loaded = false;
 
 var Data = [];
 
@@ -7,8 +12,37 @@ var readStatus = false;
 var canChangeReadStatus = true;
 
 var iter = 1;
-var time_start = new Date();
 var toRead = 0;
+
+function connect(url) {
+    exampleSocket = new WebSocket(url);
+
+    exampleSocket.onmessage = function (event) {
+        Data.push(event.data);
+
+        if (Data.length >= toRead) {
+            self.postMessage(Data)
+            setReadStatusTrue();
+        }
+    }
+
+    exampleSocket.onerror = function (event) {
+        console.log("error : " + event.data);
+    }
+
+    exampleSocket.onopen = function (event) {
+        loaded = true;
+        console.log("Socket open, set read status true");
+        setReadStatusTrue();
+    }
+
+    connected = true;
+}
+
+self.onmessage = function (event) {
+    this.console.log("Event : " + event.data);
+    this.connect(event.data);
+}
 
 function setReadStatusTrue() {
     if (readStatus == false && canChangeReadStatus) {
@@ -21,83 +55,47 @@ function setReadStatusFalse() {
     }
 }
 
-
 function getFStatus() {
     Data = ["FStatus"];
     setReadStatusFalse();
     exampleSocket.send("#FStatus");
     toRead = 18;
-
-    var now = new Date();
-    var dt = now - time_start;
-
-    if (iter != 0) {
-
-        //console.log(dt + " : " + iter + " : " + iter / dt * 1000);
-    }
 }
-
-
 
 function getStatus() {
     Data = ["Status"];
     setReadStatusFalse();
     exampleSocket.send("#Status");
     toRead = 22;
-
-    var now = new Date();
-    var dt = now - time_start;
-
-    if (iter != 0) {
-
-        //console.log(dt + " : " + iter + " : " + iter / dt * 1000);
-    }
 }
 
-exampleSocket.onmessage = function (event) {
-    Data.push(event.data);
 
-    if (Data.length >= toRead) {
-        self.postMessage(Data)
-        setReadStatusTrue();
-    }
-}
-
-exampleSocket.onerror = function (event) {
-    console.log("error : " + event.data);
-}
-
-var loaded = false;
-exampleSocket.onopen = function (event) {
-    loaded = true;
-    console.log("Socket open, set read status true");
-    setReadStatusTrue();
-    time_start = new Date();
-}
 
 
 var mode = 0;
 function update() {
-    if (iter >= 0) {
-        if (readStatus) {
-            
-            mode++;
-            if (mode < 8) {
-                getFStatus();
+    if (connected) {
+        if (iter >= 0) {
+            if (readStatus) {
+
+                mode++;
+                if (mode < 8) {
+                    getFStatus();
+                }
+                else {
+                    getStatus();
+                    mode = 0;
+                }
+                iter++;
             }
             else {
-                getStatus();
-                mode = 0;
+                // console.log("Wait...");
             }
-            iter++;
         }
         else {
-            // console.log("Wait...");
+            Data[0] = iter;
+            setReadStatusTrue();
         }
-    }
-    else {
-        Data[0] = iter;
-        setReadStatusTrue();
     }
 }
 

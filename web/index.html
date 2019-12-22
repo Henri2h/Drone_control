@@ -83,7 +83,7 @@
     </div>
   </div>
 
- 
+
 
   <div class="section" id="vue-data">
     <h2 class="title">Data :</h2>
@@ -234,16 +234,16 @@
     </div>
   -->
     <h2 class="title">Adress :</h2>
-    <div class="field has-addons">
+    <form class="field has-addons" @submit.prevent="handleSubmit">
       <div class="control">
         <input class="input" type="text" v-model="host" placeholder="Find a repository">
       </div>
       <div class="control">
-        <a class="button is-info">
+        <button class="button is-info" >
           Set
-        </a>
+        </button>
       </div>
-    </div>
+    </form>
   </div>
 
 

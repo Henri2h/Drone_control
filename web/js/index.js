@@ -25,5 +25,11 @@ var vueApp = new Vue({
       host: localStorage.websocket_url,
       frequency: '0'
 
+    },
+    methods: {
+      handleSubmit() {
+        // Send data to the server or update your stores and such.
+        localStorage.websocket_url = this.host;
+      }
     }
   })
