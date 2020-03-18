@@ -8,7 +8,7 @@
 #include <ctime>
 #include <chrono>
 #include <math.h>
-
+#include <ncurses.h>
 
 // references
 #include "Ref.h"

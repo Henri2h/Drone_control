@@ -89,7 +89,7 @@ public:
         getStabilisationMode(data);
         data.status[status_stab_mode] = data.stabilisation_mode;
 
-        int cmd_raw[3] = {data.commands[cmd_pitch], data.commands[cmd_roll], data.commands[cmd_yaw]};
+        int cmd_raw[3] = {data.commands[cmd_pitch], data.commands[cmd_roll], 2000-data.commands[cmd_yaw]};
 
         // map values
         data.entree[3] = data.commands[cmd_throttle];
@@ -298,10 +298,10 @@ public:
          /   \
         1     3
         */
-                data.motors_output[2] = data.commands[cmd_throttle] + cmd[pid_roll] - cmd[pid_pitch] + cmd[pid_yaw]; // motor 0
-                data.motors_output[0] = data.commands[cmd_throttle] - cmd[pid_roll] - cmd[pid_pitch] - cmd[pid_yaw]; // motor 1
-                data.motors_output[3] = data.commands[cmd_throttle] - cmd[pid_roll] + cmd[pid_pitch] + cmd[pid_yaw];
-                data.motors_output[1] = data.commands[cmd_throttle] + cmd[pid_roll] + cmd[pid_pitch] - cmd[pid_yaw];
+                data.motors_output[2] = data.commands[cmd_throttle] + cmd[pid_roll] + cmd[pid_pitch] + cmd[pid_yaw]; // motor 0
+                data.motors_output[0] = data.commands[cmd_throttle] - cmd[pid_roll] + cmd[pid_pitch] - cmd[pid_yaw]; // motor 1
+                data.motors_output[3] = data.commands[cmd_throttle] - cmd[pid_roll] - cmd[pid_pitch] + cmd[pid_yaw];
+                data.motors_output[1] = data.commands[cmd_throttle] + cmd[pid_roll] - cmd[pid_pitch] - cmd[pid_yaw];
                 // motor 2
                 // std::cout << "danger : " << data.motors_output[0] << "\n";
             }

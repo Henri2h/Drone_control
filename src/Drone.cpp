@@ -206,11 +206,12 @@ void loop()
 	// end
 }
 
-// ************ MAIN ************
+// ************ Control Mode ************
 auto last_call = TimeM::now();
 bool useTimer = true;
-int main(int argc, char *argv[])
-{								 //Hz
+
+void ModeFlight()
+{
 	double f_dt = 1 / frequency; //seconds
 	long long int f_dt_n = f_dt * pow(10, 9);
 	setup();
@@ -246,4 +247,132 @@ int main(int argc, char *argv[])
 		updateOrders();
 		FileManagement::saveData(data, t);
 	}
+}
+
+void InputMode()
+{
+	cout << "======================\n";
+	cout << "Entering Input mode\n";
+	cout << "======================\n";
+
+	setup();
+
+	// initialise ncurse
+	initscr();
+	//WINDOW *win = newwin(nlines, ncols, 0, 0);
+	int start = 30;
+	int length = 90;
+	int divider = 1000 / length;
+	while (true)
+	{
+		clear();
+		rc->read(data.commands);
+		for (int i = 0; i < 9; i++)
+		{
+			std::string s = std::to_string(data.commands[i]);
+			mvprintw(i, 1, s.c_str());
+
+			// start and end
+			mvprintw(i, start, "<");
+			mvprintw(i, start + length, ">");
+
+			mvprintw(i, start - 200 / divider, "|");
+			mvprintw(i, start + length + 200 / divider, "|");
+
+			if (data.commands[i] > 800)
+			{
+				mvprintw(i, (data.commands[i] - 1000) / divider + start, "x");
+			}
+			else
+			{
+				mvprintw(i, 10, "Err");
+			}
+		}
+		refresh();
+	}
+}
+
+void MotorControlMode()
+{
+	cout << "======================\n";
+	cout << "Motor control mode\n";
+	cout << "======================\n";
+
+	setup();
+	initscr();
+	int pos = 0;
+
+	mvprintw(0, 0, "Motor : 0");
+	std::string drone = "2     0\n \\   / \n  |D|  \n /   \\ \n1     3\n";
+	mvprintw(2, 0, drone.c_str());
+
+	while (true)
+	{
+
+		int ch;
+		nodelay(stdscr, TRUE);
+
+		if ((ch = getch()) != ERR)
+		{
+			pos++;
+			clear();
+			std::string s = std::to_string(pos);
+
+			mvprintw(0, 0, "Motor :");
+			mvprintw(0, 8, s.c_str());
+			mvprintw(2, 0, drone.c_str());
+			refresh();
+			
+			
+			if (pos > 3)
+				pos = 0;
+
+			
+		}
+
+		rc->read(data.commands);
+		for (size_t i = 0; i < 4; i++)
+		{
+			data.motors_output[i] == 1000;
+		}
+		data.motors_output[pos] = data.commands[cmd_throttle];
+		servo->setDuty(data);
+	}
+}
+
+void HelpMode()
+{
+	cout << "======================\n";
+	cout << "Entering Help mode\n";
+	cout << "======================\n";
+	cout << "Commands : \n";
+	cout << "nothing : run the grogram\n";
+	cout << "--inputs : display the inputs\n";
+	cout << "--motors : Control the motors\n";
+	cout << "--help : display the help\n";
+}
+
+// ************ MAIN ************
+
+int main(int argc, char *argv[])
+{
+	// get command parmaters
+
+	if (argc > 1 && strcmp(argv[1], "--inputs") == 0)
+	{
+		InputMode();
+	}
+	if (argc > 1 && strcmp(argv[1], "--motors") == 0)
+	{
+		MotorControlMode();
+	}
+	else if (argc > 1 && strcmp(argv[1], "--help") == 0)
+	{
+		HelpMode();
+	}
+	else
+	{
+		ModeFlight();
+	}
+	//Hz
 }
