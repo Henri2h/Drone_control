@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hello Bulma!</title>
+  <title>Drone control</title>
   <link rel="stylesheet" href="css/bulma.min.css">
 
   <script defer src="js/vendor/fontawesome_v5.3.1.js"></script>
@@ -83,141 +83,147 @@
     </div>
   </div>
 
+  <div id="vue-data">
 
+    <section class="section">
+      <h2 class="title">Data :</h2>
+      <div class="columns">
+        <div class="column">
+          <div class="box">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
 
-  <div class="section" id="vue-data">
-    <h2 class="title">Data :</h2>
-    <div class="columns">
-      <div class="column">
-        <div class="box">
-          <article class="media">
-            <div class="media-content">
-              <div class="content">
+                  <h2 class="title is-4">Acceleration</h2>
+                  <strong>Acc x :</strong> {{accel_x}} <strong>m/s^2</strong><br>
+                  <strong>Acc y :</strong> {{accel_y}} <strong>m/s^2</strong><br>
+                  <strong>Acc z :</strong> {{accel_z}} <strong>m/s^2</strong>
 
-                <h2 class="title is-4">Acceleration</h2>
-                <strong>Acc x :</strong> {{accel_x}} <strong>m/s^2</strong><br>
-                <strong>Acc y :</strong> {{accel_y}} <strong>m/s^2</strong><br>
-                <strong>Acc z :</strong> {{accel_z}} <strong>m/s^2</strong>
-
+                </div>
               </div>
-            </div>
-          </article>
+            </article>
+          </div>
+        </div>
+        <div class="column">
+          <div class="box">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
+
+                  <h2 class="title is-4">Gyration</h2>
+                  <strong>Gyration x :</strong> {{gyr_x}}<br>
+                  <strong>Gyration y :</strong> {{gyr_y}}<br>
+                  <strong>Gyration z :</strong> {{gyr_z}}
+
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="column">
+          <div class="box">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
+
+                  <h2 class="title is-4">GPS</h2>
+                  <strong>Fix</strong> {{gps_fix}}<br>
+                  <strong>Latitude</strong> {{gps_latitude}}<br>
+                  <strong>Longitude</strong> {{gps_longitude}}<br>
+                  <strong>Precision Latitude</strong> {{gps_latitude_precision}}<br>
+                  <strong>Precision Longitude</strong> {{gps_longitude_precision}}<br>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="column">
+          <div class="box">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
+                  <h2 class="title is-4">Informations</h2>
+                  <strong>{{message}}</strong><br>
+                  <strong>Mode :</strong> {{mode}}<br>
+                  <strong>Saving :</strong> {{saving}}<br>
+                  <strong>Display gains :</strong> {{displayGains}}<br>
+                  <strong>Frequency :</strong> {{frequency}} Hz
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="column">
+          <div class="box">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
+
+                  <h2 class="title is-4">Informations</h2>
+                  <strong>Temp :</strong> {{temp}}<br>
+                  <strong>pressure :</strong> {{pressure}}<br>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="column">
+          <div class="box">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
+
+                  <h2 class="title is-4">Controler</h2>
+                  <strong>Kp :</strong> {{kp}}<br>
+                  <strong>Ki :</strong> {{ki}}<br>
+                  <strong>Kd :</strong> {{kd}}<br>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
       </div>
-      <div class="column">
-        <div class="box">
-          <article class="media">
-            <div class="media-content">
-              <div class="content">
+    </section>
+    <section class="section">
+      <h2 class="title">Controler setting zone</h2>
+      <div class="columns">
+        <div class="column">
+          <div class="box">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
 
-                <h2 class="title is-4">Gyration</h2>
-                <strong>Gyration x :</strong> {{gyr_x}}<br>
-                <strong>Gyration y :</strong> {{gyr_y}}<br>
-                <strong>Gyration z :</strong> {{gyr_z}}
-
+                  <h2 class="title is-4">PID Pitch and Roll</h2>
+                  <strong>Kp :</strong> {{kp}}<br>
+                  <strong>Ki :</strong> {{ki}}<br>
+                  <strong>Kd :</strong> {{kd}}<br>
+                </div>
               </div>
-            </div>
-          </article>
+            </article>
+          </div>
+        </div>
+
+
+        <div class="column">
+          <div class="box">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
+
+                  <h2 class="title is-4">PID Yaw</h2>
+                  <strong>Kp :</strong> {{kp}}<br>
+                  <strong>Ki :</strong> {{ki}}<br>
+                  <strong>Kd :</strong> {{kd}}<br>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
       </div>
-      <div class="column">
-        <div class="box">
-          <article class="media">
-            <div class="media-content">
-              <div class="content">
-
-                <h2 class="title is-4">GPS</h2>
-                <strong>Fix</strong> {{gps_fix}}<br>
-                <strong>Latitude</strong> {{gps_latitude}}<br>
-                <strong>Longitude</strong> {{gps_longitude}}<br>
-                <strong>Precision</strong> {{accel_z}}<br>
-                <strong>Precision</strong> {{accel_z}}<br>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-      <div class="column">
-        <div class="box">
-          <article class="media">
-            <div class="media-content">
-              <div class="content">
-                <h2 class="title is-4">Informations</h2>
-                <strong>{{message}}</strong><br>
-                <strong>Mode :</strong> {{mode}}<br>
-                <strong>Saving :</strong> {{saving}}<br>
-                <strong>Display gains :</strong> {{displayGains}}<br>
-                <strong>Frequency :</strong> {{frequency}} Hz
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-      <div class="column">
-        <div class="box">
-          <article class="media">
-            <div class="media-content">
-              <div class="content">
-
-                <h2 class="title is-4">Informations</h2>
-                <strong>Temp :</strong> {{temp}}<br>
-                <strong>pressure :</strong> {{pressure}}<br>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-      <div class="column">
-        <div class="box">
-          <article class="media">
-            <div class="media-content">
-              <div class="content">
-
-                <h2 class="title is-4">Controler</h2>
-                <strong>Kp :</strong> {{kp}}<br>
-                <strong>Ki :</strong> {{ki}}<br>
-                <strong>Kd :</strong> {{kd}}<br>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-    </div>
-    <div class="columns">
-      <div class="column">
-        <div class="box">
-          <article class="media">
-            <div class="media-content">
-              <div class="content">
-
-                <h2 class="title is-4">Controler</h2>
-                <strong>Kp :</strong> {{kp}}<br>
-                <strong>Ki :</strong> {{ki}}<br>
-                <strong>Kd :</strong> {{kd}}<br>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
+    </section>
 
 
 
-      <div class="column">
-        <div class="box">
-          <article class="media">
-            <div class="media-content">
-              <div class="content">
-
-                <h2 class="title is-4">Controler</h2>
-                <strong>Kp :</strong> {{kp}}<br>
-                <strong>Ki :</strong> {{ki}}<br>
-                <strong>Kd :</strong> {{kd}}<br>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-    </div>
     <!--
     <div>
       <div class="columns">
@@ -268,25 +274,27 @@
       <div id="result_iter"></div>
     </div>
   -->
-    <h2 class="title">Adress :</h2>
-    <form class="field has-addons" @submit.prevent="handleSubmit">
-      <div class="control">
-        <input class="input" type="text" v-model="host" placeholder="Find a repository">
-      </div>
-      <div class="control">
-        <button class="button is-info" >
-          Set
-        </button>
-      </div>
-    </form>
+    <section class="section">
+      <h2 class="title">Adress :</h2>
+      <form class="field has-addons" @submit.prevent="handleSubmit">
+        <div class="control">
+          <input class="input" type="text" v-model="host" placeholder="Find a repository">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
   </div>
-
+  </section>
+  </div>
 
 
   <footer class="footer">
     <div class="content has-text-centered">
       <p>
-        Web Version : <strong>1.0.0</strong><br>
+        Web Version : <strong>1.0.1</strong><br>
         <strong>Drone controler</strong> by <a href="https://henri2h.fr">Henri2h</a>.
       </p>
     </div>

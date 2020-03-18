@@ -22,6 +22,8 @@ var vueApp = new Vue({
       gps_fix:'',
       gps_latitude:'',
       gps_longitude:'',
+      gps_latitude_precision:'',
+      gps_longitude_precision:'',
       host: localStorage.websocket_url,
       frequency: '0'
 
