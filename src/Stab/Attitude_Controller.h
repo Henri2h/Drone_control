@@ -1,3 +1,5 @@
+#include "../Ref.h"
+#include "PID_single_axis.h"
 
 class Attitude_Controller
 {
@@ -26,6 +28,7 @@ class Attitude_Controller
 
     // Yaw PID
     float yawSpeedPIDParams[4] = {0.010, 150.0, 0.0, 0.0}; // G, Kp, Kd, Ki
+    
   public:
     Attitude_Controller();
     float cmd_last_pitch = 0;

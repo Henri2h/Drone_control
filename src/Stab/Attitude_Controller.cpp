@@ -1,6 +1,6 @@
 #include "Attitude_Controller.h";
 
-Attitude_Controller()
+Attitude_Controller::Attitude_Controller()
 {
     loop_pos_pitch.setPID(0.01, 250, 0, 0);
     loop_pos_roll.setPID(0.01, 250, 0, 0); // according to librepilot
@@ -13,7 +13,7 @@ Attitude_Controller()
 }
 
 // attention, pour permettre que les deux boucles soient indépendantes, il ne faut pas quelle fonctionnent à la même fréquence !!
-void update(Data &data, float *cmd, float dt)
+void Attitude_Controller::update(Data &data, float *cmd, float dt)
 {
     // pitch
     cmd[pid_pitch] = loop_pos_pitch.update(cmd[pid_pitch], data.ang[pid_pitch], dt);     // outer loop (attitude)
@@ -41,7 +41,7 @@ void update(Data &data, float *cmd, float dt)
     cmd[pid_yaw] = loop_rate_yaw.update(cmd[pid_yaw], data.rates[pid_yaw], dt);
 }
 
-void update_pid(float kp_atti, float kp_rate, float kd_rate)
+void Attitude_Controller::update_pid(float kp_atti, float kp_rate, float kd_rate)
 {
 
     loop_pos_pitch.setPID(0.01, kp_rate, kd_rate, 0);
