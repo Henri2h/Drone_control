@@ -17,7 +17,7 @@ void FileManagement::Log(string base, string text)
     ofstream save_file;
     save_file.open(FileManagement::file_log_name, std::ofstream::app);
     save_file << "[ " << base << " ] : " << text << "\n";
-    cout << "[ " << base << " ] : " << text << "\n";
+    std::cout << "[ " << base << " ] : " << text << "\n";
     save_file.close();
 }   
 
@@ -43,10 +43,10 @@ std::string FileManagement::listDir(const char *list)
 }
 
 std::string* FileManagement::readFile(string fileName){
-
+    return "";
 }
 
-void FileManagement::saveData(Data& data, float t)
+void FileManagement::saveData(Data &data, float t)
 {
     string sep = ",";
     if (data.status[status_Saving] == 1 && FileManagement::isFileOpen == false)
