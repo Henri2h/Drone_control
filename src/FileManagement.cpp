@@ -42,6 +42,10 @@ std::string FileManagement::listDir(const char *list)
     return ss.str();
 }
 
+std::string* FileManagement::readFile(string fileName){
+
+}
+
 void FileManagement::saveData(Data& data, float t)
 {
     string sep = ",";
