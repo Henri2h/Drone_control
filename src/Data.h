@@ -1,3 +1,7 @@
+#ifndef Data_H
+#define Data_H
+
+
 #include <chrono>
 
 #include "Ref.h"
@@ -52,3 +56,5 @@ public:
     double time_exp;
     ~Data();
 };
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef PID_Single_Axis_H
+#define PID_Single_Axis_H
+
 #include <unistd.h>
 #include <memory>
 #include <iostream>
@@ -35,3 +38,5 @@ public:
 
     void displayK();
 };
+
+#endif
