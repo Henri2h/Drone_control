@@ -1,7 +1,6 @@
 CXX ?= g++
 NAVIO = ../includes/Navio
 INCLUDES = -I ../includes/Navio
-HACKFLIGHT = $(wildcard ../includes/HACKFLIGHT/*.hpp)
 
 all:
 	$(MAKE) -C ../includes/Navio all

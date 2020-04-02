@@ -23,7 +23,8 @@ DEPS = $(OBJECTS:.o=.d)
 
 # flags #
 COMPILE_FLAGS = -std=c++11 -Wall -Wextra -g
-INCLUDES = -I include/ -I /usr/local/include includes/Navio
+INCLUDES = -I includes/Navio -I /usr/local/include
+NAVIO_PATH = includes/Navio
 # Space-separated pkg-config libraries used by this project
 LIBS = includes/Navio
 
@@ -69,4 +70,7 @@ $(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
 # dependency files to provide header dependencies
 $(BUILD_PATH)/%.o: $(SRC_PATH)/%.$(SRC_EXT)
 	@echo "Compiling: $< -> $@"
+	
+	# build Navio files
+	$(MAKE) -C $(NAVIO_PATH) all
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -MP -MMD -c $< -o $@
