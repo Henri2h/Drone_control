@@ -21,7 +21,6 @@ using namespace std;
 int i = 0;
 void setup(){
     printf("[ MAIN ] : Setup \n");
-
 }
 
 void loop(){
