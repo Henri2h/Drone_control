@@ -14,6 +14,7 @@ public:
     Data(/* args */);
 
     float t = 0; // time
+    
     float ang[3] = {0, 0, 0};
     float ang_acc[3] = {0, 0, 0};
 
@@ -43,7 +44,7 @@ public:
                                 //float cmd[3] = {0, 0, 0};   // command mapped
 
     // saving
-    float controller_gains_rates[3] = {0, 1, 0};
+    float controller_gains[gains_length];
 
     int orders[10];
     double status[status_length];
