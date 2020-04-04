@@ -1,4 +1,4 @@
-#include "Attitude_Controller.h";
+#include "Attitude_Controller.h"
 
 Attitude_Controller::Attitude_Controller()
 {
