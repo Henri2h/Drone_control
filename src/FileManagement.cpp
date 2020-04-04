@@ -42,8 +42,11 @@ std::string FileManagement::listDir(const char *list)
     return ss.str();
 }
 
-std::string* FileManagement::readFile(string fileName){
-    return "";
+string* FileManagement::readFile(string fileName){
+    
+    string colour[4] = { fileName, "Red", 
+                         "Orange", "Yellow" }; 
+    return colour;
 }
 
 void FileManagement::saveData(Data &data, float t)
