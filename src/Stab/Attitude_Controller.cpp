@@ -2,13 +2,13 @@
 
 Attitude_Controller::Attitude_Controller()
 {
-    loop_pos_pitch.setPID(0.01, 250, 0, 0);
-    loop_pos_roll.setPID(0.01, 250, 0, 0); // according to librepilot
+    loop_pos_pitch.setPID(0.01f, 250, 0, 0);
+    loop_pos_roll.setPID(0.01f, 250, 0, 0); // according to librepilot
 
-    loop_speed_pitch.setPID(1, 0.006, 0.000081, 0.018);
-    loop_speed_roll.setPID(1, 0.0054, 0.0081, 0.016);
+    loop_speed_pitch.setPID(1, 0.006f, 0.000081f, 0.018f);
+    loop_speed_roll.setPID(1, 0.0054f, 0.0081f, 0.016f);
 
-    loop_rate_yaw.setPID(1, 0.00897, 0.000076, 0.01705);
+    loop_rate_yaw.setPID(1, 0.00897f, 0.000076f, 0.01705f);
     // setup gains for the controllers (Kp)
 }
 

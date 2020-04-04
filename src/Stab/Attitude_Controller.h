@@ -1,5 +1,9 @@
+#ifndef Attitude_Controller_H
+#define Attitude_Controller_H
+
 #include "../Ref.h"
 #include "PID_single_axis.h"
+#include "../Data.h"
 
 class Attitude_Controller
 {
@@ -36,6 +40,8 @@ class Attitude_Controller
     float e_s = 0;
 
     // attention, pour permettre que les deux boucles soient indépendantes, il ne faut pas quelle fonctionnent à la même fréquence !! 
-    void update(Data& data, float *cmd, float dt);
+    void update(Data &data, float *cmd, float dt);
     void update_pid(float kp_atti, float kp_rate, float kd_rate);
 };
+
+#endif
