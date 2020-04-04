@@ -1,3 +1,6 @@
+#ifndef Stabilisation_H
+#define Stabilisation_H
+
 #include "Rate_Controller.cpp"
 #include "Attitude_Controller.cpp"
 #include "math.h"
@@ -41,4 +44,6 @@ public:
 
     int i;
     int *Stabilize(Data &data, float dt);
-}
+};
+
+#endif
