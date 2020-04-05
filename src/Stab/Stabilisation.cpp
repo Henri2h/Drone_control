@@ -70,9 +70,9 @@ void Stabilisation::getValuesExperiments(Data &data, float dt)
 void Stabilisation::getValuesStabRates(Data &data, float dt)
 {
     // map kd
-    double kp_rate = mapValue(data.commands[cmd_kp], 922, 2077, 0, 1);
-    double kd_rate = mapValue(data.commands[cmd_kd], 922, 2077, 0, 1);
-    double ki_rate = mapValue(data.commands[cmd_ki], 921, 2077, 0, 1);
+    double kp_rate = utils::mapValue(data.commands[cmd_kp], 922, 2077, 0, 1);
+    double kd_rate = utils::mapValue(data.commands[cmd_kd], 922, 2077, 0, 1);
+    double ki_rate = utils::mapValue(data.commands[cmd_ki], 921, 2077, 0, 1);
 
     data.status[status_gains_rate_kp] = kp_rate;
     data.status[status_gains_rate_kd] = kd_rate;
@@ -88,9 +88,9 @@ void Stabilisation::getValuesStabAttitude(Data &data, float dt)
     data.entree[pid_roll] = cmd[pid_roll];
 
     // fix values
-    float kp_atti = mapValue(data.commands[cmd_kd], 922, 2077, 0, pid_gains_attitude_max);
-    float kp_rate = mapValue(data.commands[cmd_kp], 922, 2077, 0, pid_gains_rate_max);
-    float kd_rate = mapValue(data.commands[cmd_ki], 921, 2077, 0, 2);
+    float kp_atti = utils::mapValue(data.commands[cmd_kd], 922, 2077, 0, pid_gains_attitude_max);
+    float kp_rate = utils::mapValue(data.commands[cmd_kp], 922, 2077, 0, pid_gains_rate_max);
+    float kd_rate = utils::mapValue(data.commands[cmd_ki], 921, 2077, 0, 2);
 
     if (i % 600 == 0 && showGains)
     {
@@ -199,9 +199,9 @@ int *Stabilisation::Stabilize(Data &data, float dt)
 
         int cmd_raw[3] = {data.commands[cmd_pitch], data.commands[cmd_roll], 2000 - data.commands[cmd_yaw]};
 
-        cmd[pid_pitch] = mapValue(cmd_raw[pid_pitch], 1075, 1920, -MAX, MAX);
-        cmd[pid_roll] = mapValue(cmd_raw[pid_roll], 1075, 1920, -MAX, MAX);
-        cmd[pid_yaw] = mapValue(cmd_raw[pid_yaw], 1075, 1920, -MAX_YAW_SPEED, MAX_YAW_SPEED);
+        cmd[pid_pitch] = utils::mapValue(cmd_raw[pid_pitch], 1075, 1920, -MAX, MAX);
+        cmd[pid_roll] = utils::mapValue(cmd_raw[pid_roll], 1075, 1920, -MAX, MAX);
+        cmd[pid_yaw] = utils::mapValue(cmd_raw[pid_yaw], 1075, 1920, -MAX_YAW_SPEED, MAX_YAW_SPEED);
 
         // compute commands
         // update orders

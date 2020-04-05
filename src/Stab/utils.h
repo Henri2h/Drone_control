@@ -3,7 +3,8 @@
 
 class utils
 {
-    float mapValue(float in_val, float in_min, float in_max, float out_min, float out_max);
+public:
+    static float mapValue(float in_val, float in_min, float in_max, float out_min, float out_max);
 };
 
 #endif
