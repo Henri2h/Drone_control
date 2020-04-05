@@ -20,10 +20,12 @@ All angle are expressed in degrees
 #include <unistd.h>
 #include <string>
 #include <memory>
+#include <math.h>
 
 // filter
 #include "Filter.cpp"
 #include "Data.h"
+#include "FileManagement.h"
 
 #define AXIS_NB 3       // three axis
 #define ARR_ACCEL_POS 0 // position of accel data in array
@@ -72,6 +74,7 @@ public:
     void update();
 
     void setDt(float dt_in);
+    void setMode(Data &data);
 
     void getAngleAccel(Data &data);
     void getAcceleration(Data &data);
