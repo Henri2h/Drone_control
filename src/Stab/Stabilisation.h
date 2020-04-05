@@ -29,6 +29,10 @@ private:
     void getValuesStabRates(Data &data, float dt);
     void getValuesStabAttitude(Data &data, float dt);
 
+    // display
+    void printGains(int *cmd, int kp_rate, int kd_rate, Data &data);
+    void printCommands(int *cmd, Data &data);
+
     /// Change stabilisation depending on remote commands
     void getStabilisationMode(Data &data);
 

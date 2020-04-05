@@ -15,7 +15,7 @@ Stabilisation::Stabilisation()
     previous_cmd = 0;
 }
 
-void Stabilisation::getValuesExperiments(Data &data)
+void Stabilisation::getValuesExperiments(Data &data, float dt)
 {
     // if we are in experiment mode
     // param
@@ -161,14 +161,14 @@ void Stabilisation::initialize(double *status)
     this->status = status;
 }
 
-void showGains(int *cmd, int kp_rate, int kd_rate)
+void Stabilisation::printGains(int *cmd, int kp_rate, int kd_rate, Data &data)
 {
 
     std::cout << "kp_rate : " << kp_rate << " kd_rate : " << kd_rate << "\n";
     std::cout << "cmd : " << cmd[pid_roll] << " kd_rate : " << data.rates[pid_roll] << "\n";
 }
 
-void showCommands(int *cmd)
+void Stabilisation::printCommands(int *cmd, Data &data)
 {
     std::cout << "Cmd : " << cmd[pid_roll] << " " << data.rates[pid_roll] << "\n";
 }
