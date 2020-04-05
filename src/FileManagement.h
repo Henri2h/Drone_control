@@ -1,3 +1,5 @@
+#ifndef FileManagement_H
+#define FileManagement_H
 
 #define FILE_SAVE_NAME_FORMAT "/home/pi/data/save/data_%Y%m%d_%H%M%S.csv"
 #define FILE_LOG_NAME_FORMAT "/home/pi/data/log/log_%Y%m%d_%H%M%S.txt"
@@ -31,3 +33,5 @@ class FileManagement
     static string* readFile(string fileName);
     static void saveData(Data &data, float t);
 };
+
+#endif
