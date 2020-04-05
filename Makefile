@@ -11,7 +11,7 @@ BIN_NAME = Drone
 # extensions #
 SRC_EXT = cpp
 
-NAVIO = ../includes/Navio
+NAVIO = includes/Navio
 
 # code lists #
 # Find all source files in the source directory, sorted by
@@ -26,9 +26,8 @@ DEPS = $(OBJECTS:.o=.d)
 # flags #
 COMPILE_FLAGS = -std=c++11 -Wall -Wextra -g
 INCLUDES = -I includes/Navio -I /usr/local/include
+
 NAVIO_PATH = includes/Navio
-# Space-separated pkg-config libraries used by this project
-LIBS = includes/Navio
 
 LDFLAGS = -lnavio -lrt -lpthread -lpigpio -lpthread -L. -luWS -lssl -lcrypto -lz -luv -lncurses
 
@@ -66,26 +65,22 @@ all:$(BIN_PATH)/$(BIN_NAME) navio
 	@echo "Building navio"
 	# build Navio files
 	$(MAKE) -C $(NAVIO_PATH) all
-
-	@echo "Creation of the executable"
-
-	# Creation of the executable
-	$(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
-		@echo "Linking: $@"
-		$(CXX) $(OBJECTS) -L$(NAVIO) $(LDFLAGS) -o $@
-
-	# Add dependency files, if they exist
-	-include $(DEPS)
-
-	# Source file rules
-	# After the first compilation they will be joined with the rules from the
-	# dependency files to provide header dependencies
-	$(BUILD_PATH)/%.o: $(SRC_PATH)/%.$(SRC_EXT)
-		@echo "Compiling: $< -> $@"	
-		$(CXX) $(CXXFLAGS) $(INCLUDES) -MP -MMD -c $< -o $@
-		
+	
 	@echo "Making symlink: $(BIN_NAME) -> $<"
 	@$(RM) $(BIN_NAME)
 	@ln -s $(BIN_PATH)/$(BIN_NAME) $(BIN_NAME)
 
+# Creation of the executable
+$(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
+	@echo "Linking: $@"
+	$(CXX) $(OBJECTS) -L$(NAVIO) $(LDFLAGS) -o $@
 
+# Add dependency files, if they exist
+-include $(DEPS)
+
+# Source file rules
+# After the first compilation they will be joined with the rules from the
+# dependency files to provide header dependencies
+$(BUILD_PATH)/%.o: $(SRC_PATH)/%.$(SRC_EXT)
+	@echo "Compiling: $< -> $@"	
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -MP -MMD -c $< -o $@
