@@ -7,6 +7,8 @@
 #include <thread>
 #include <sstream>
 
+#include "Data.h"
+
 using namespace uWS;
 using namespace std;
 
