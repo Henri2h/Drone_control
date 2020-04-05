@@ -1,6 +1,8 @@
 #ifndef Attitude_Controller_H
 #define Attitude_Controller_H
 
+#include <math.h>  
+
 #include "../Ref.h"
 #include "PID_single_axis.h"
 #include "../Data.h"

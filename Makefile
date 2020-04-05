@@ -65,12 +65,13 @@ $(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
 # Add dependency files, if they exist
 -include $(DEPS)
 
+
+# build Navio files
+$(MAKE) -C $(NAVIO_PATH) all
+
 # Source file rules
 # After the first compilation they will be joined with the rules from the
 # dependency files to provide header dependencies
 $(BUILD_PATH)/%.o: $(SRC_PATH)/%.$(SRC_EXT)
-	@echo "Compiling: $< -> $@"
-	
-	# build Navio files
-	$(MAKE) -C $(NAVIO_PATH) all
+	@echo "Compiling: $< -> $@"	
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -MP -MMD -c $< -o $@
