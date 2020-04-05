@@ -30,6 +30,8 @@ NAVIO_PATH = includes/Navio
 # Space-separated pkg-config libraries used by this project
 LIBS = includes/Navio
 
+LDFLAGS = -lnavio -lrt -lpthread -lpigpio -lpthread -L. -luWS -lssl -lcrypto -lz -luv -lncurses
+
 .PHONY: default_target
 default_target: release
 
@@ -72,7 +74,7 @@ all:$(BIN_PATH)/$(BIN_NAME) navio
 # Creation of the executable
 $(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
 	@echo "Linking: $@"
-	$(CXX) $(OBJECTS) -L$(NAVIO) -lnavio  -lrt -lpthread -lpigpio -lpthread -L. -luWS -lssl -lcrypto -lz -luv -lncurses -o $@
+	$(CXX) $(OBJECTS) -L$(NAVIO) $(LDFLAGS) -o $@
 
 # Add dependency files, if they exist
 -include $(DEPS)

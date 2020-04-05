@@ -23,7 +23,7 @@ All angle are expressed in degrees
 #include <math.h>
 
 // filter
-#include "Filter.cpp"
+#include "Filter.h"
 #include "Data.h"
 #include "FileManagement.h"
 

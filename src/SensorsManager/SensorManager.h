@@ -1,8 +1,8 @@
 #ifndef SensorManager_H
 #define SensorManager_H
 
-#include "GPS.cpp"
-#include "Barometer.cpp"
+#include "GPS.h"
+#include "Barometer.h"
 #include <thread>
 
 class SensorManager

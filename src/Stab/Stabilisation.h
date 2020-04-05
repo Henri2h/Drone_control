@@ -1,12 +1,12 @@
 #ifndef Stabilisation_H
 #define Stabilisation_H
 
-#include "Rate_Controller.cpp"
-#include "Attitude_Controller.cpp"
+#include "Rate_Controller.h"
+#include "Attitude_Controller.h"
 #include "utils.h"
 #include "../Data.h"
 #include "../Ref.h"
-#include "PID_single_axis.cpp"
+#include "PID_single_axis.h"
 
 class Stabilisation
 {

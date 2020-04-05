@@ -1,3 +1,6 @@
+#ifndef Drone_H
+#define Drone_H
+
 #include <Common/Util.h>
 #include <unistd.h>
 #include <memory>
@@ -12,18 +15,18 @@
 
 // references
 #include "Ref.h"
-#include "Data.cpp"
+#include "Data.h"
 
-#include "FileManagement.cpp"
+#include "FileManagement.h"
 
 
-#include "RCInputManager.cpp"
-#include "ServoManager.cpp"
+#include "RCInputManager.h"
+#include "ServoManager.h"
 #include "IMU.h"
-#include "Stab/Stabilisation.cpp"
-#include "LEDManager.cpp"
+#include "Stab/Stabilisation.h"
+#include "LEDManager.h"
 #include "Remote.h"
-#include "SensorsManager/SensorManager.cpp"
+#include "SensorsManager/SensorManager.h"
 
 
 using namespace std;
@@ -56,3 +59,5 @@ auto arming_t_started = TimeM::now();
 
 // adding a status save system : ease dvpt
 int f_display_iterationscount = 6000;
+
+#endif
