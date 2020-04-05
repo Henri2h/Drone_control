@@ -152,8 +152,8 @@ private:
 
 	static void start_remote(Data *data_i, float *time_now_in)
 	{
-		Data *dt = data_i;
-		float *time_pointer = time_now_in;
+		static Data *dt = data_i;
+		static float *time_pointer = time_now_in;
 
 		FileManagement::Log("REMOTE", "Started");
 		Hub h;
