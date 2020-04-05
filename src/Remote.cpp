@@ -330,7 +330,7 @@ private:
 					else if (L_r[0].compare("#SetGainsRate") == 0)
 					{
 						
-						cout << L_r.size << "arguments : 1: " << L_r[1] << " 2: " << L_r[2] << "\n";
+						cout << L_r.size() << "arguments : 1: " << L_r[1] << " 2: " << L_r[2] << "\n";
 						int index = std::stoi(L_r[1]);
 						// set values
 						dt->controller_gains[index] = std::stof(L_r[1]);
