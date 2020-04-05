@@ -1,6 +1,6 @@
 #include "SensorManager.h"
 
-SensorManager::isLooping = false;
+bool SensorManager::isLooping = false;
 
 SensorManager::SensorManager(){ }
 
