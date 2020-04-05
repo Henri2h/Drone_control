@@ -121,6 +121,7 @@ void loop()
 	auto now = TimeM::now();
 
 	// ************ IMU : update **********
+	imu->update();
 	imu->setMode(data);
 	imu->update(); // get imu data just after timing
 
