@@ -7,18 +7,16 @@
 
 class SensorManager
 {
-  private:
-    
-    static bool isLooping = false;
-    thread sensor_thread;
+private:
+  static bool isLooping;
+  thread sensor_thread;
 
-    static void thread_update_loop(double *status);
+  static void thread_update_loop(double *status);
 
-  public:
-
-    void startThread(double *status);
-    void stropThread();
-    
+public:
+  SensorManager();
+  void startThread(double *status);
+  void stropThread();
 };
 
 #endif
