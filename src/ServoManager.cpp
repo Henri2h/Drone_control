@@ -1,104 +1,71 @@
-/*
-Provided to you by Emlid Ltd (c) 2015.
-twitter.com/emlidtech || www.emlid.com || info@emlid.com
+#include "ServoManager.h"
 
-Example: Control servos connected to PWM driver onboard of Navio2 shield for Raspberry Pi.
+std::unique_ptr<RCOutput> ServoManager::get_rcout()
+{
+    if (get_navio_version() == NAVIO2)
+    {
+        auto ptr = std::unique_ptr<RCOutput>{new RCOutput_Navio2()};
+        return ptr;
+    }
+    else
+    {
+        auto ptr = std::unique_ptr<RCOutput>{new RCOutput_Navio()};
+        return ptr;
+    }
+}
 
-Connect servo to Navio2's rc output and watch it work.
-PWM_OUTPUT = 0 complies to channel number 1, 1 to channel number 2 and so on.
-To use full range of your servo correct SERVO_MIN and SERVO_MAX according to it's specification.
+ServoManager::ServoManager()
+{
+    if (getuid())
+    {
+        fprintf(stderr, "Not root. Please launch like this: sudo \n");
+        throw "Not root!";
+    }
 
-To run this example navigate to the directory containing it and run following commands:
-make
-sudo ./Servo
-*/
+    for (size_t i = 0; i < 4; i++)
+    {
+        if (!(pwm->initialize(i)))
+        {
+            fprintf(stderr, "Error\n");
+        }
+    }
+}
 
-#include <unistd.h>
-#include "Navio2/PWM.h"
-#include "Navio+/RCOutput_Navio.h"
-#include "Navio2/RCOutput_Navio2.h"
-#include "Common/Util.h"
-#include <unistd.h>
-#include <memory>
+int ServoManager::initialize()
+{
+    for (size_t i = 0; i < 4; i++)
+    {
+        pwm->set_frequency(i, 50);
 
-#define SERVO_MIN 1000 //1250 /*mS*/
-#define SERVO_MAX 1750 /*mS*/
-#define MOTOR_COUNT 4
+        if (!(pwm->enable(i)))
+        {
+            FileManagement::Log("Servo manager", "could not enable");
+            return 1;
+        }
+    }
+    return 0;
+}
 
-using namespace Navio;
-
-class ServoManager
+void ServoManager::setDuty(Data &data)
 {
 
-    std::unique_ptr<RCOutput> get_rcout()
+    for (size_t i = 0; i < 4; i++)
     {
-        if (get_navio_version() == NAVIO2)
-        {
-            auto ptr = std::unique_ptr<RCOutput>{new RCOutput_Navio2()};
-            return ptr;
-        }
-        else
-        {
-            auto ptr = std::unique_ptr<RCOutput>{new RCOutput_Navio()};
-            return ptr;
-        }
+        int a = data.motors_output[i];
+        if (a < SERVO_MIN)
+            a = SERVO_MIN;
+        if (a > SERVO_MAX)
+            a = SERVO_MAX;
+        pwm->set_duty_cycle(i, a);
     }
+}
 
-    std::unique_ptr<RCOutput> pwm = get_rcout();
+void ServoManager::zero()
+{
 
-public:
-    ServoManager()
+    for (size_t i = 0; i < 4; i++)
     {
-        if (getuid())
-        {
-            fprintf(stderr, "Not root. Please launch like this: sudo \n");
-            throw "Not root!";
-        }
-
-        for (size_t i = 0; i < 4; i++)
-        {
-            if (!(pwm->initialize(i)))
-            {
-                fprintf(stderr, "Error\n");
-            }
-        }
+        int a = 100;
+        pwm->set_duty_cycle(i, a);
     }
-
-    int initialize()
-    {
-        for (size_t i = 0; i < 4; i++)
-        {
-            pwm->set_frequency(i, 50);
-
-            if (!(pwm->enable(i)))
-            {
-                FileManagement::Log("Servo manager", "could not enable");
-                return 1;
-            }
-        }
-        return 0;
-    }
-
-    void setDuty(Data &data)
-    {
-
-        for (size_t i = 0; i < 4; i++)
-        {
-            int a = data.motors_output[i];
-            if (a < SERVO_MIN)
-                a = SERVO_MIN;
-            if (a > SERVO_MAX)
-                a = SERVO_MAX;
-            pwm->set_duty_cycle(i, a);
-        }
-    }
-    void zero()
-    {
-
-        for (size_t i = 0; i < 4; i++)
-        {
-            int a = 100;
-            pwm->set_duty_cycle(i, a);
-        }
-    }
-};
+}
