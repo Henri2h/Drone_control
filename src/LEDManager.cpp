@@ -72,7 +72,7 @@ void LEDManager::setBlack()
     led->setColor(Colors::Black);
 }
 
-void setArming()
+void LEDManager::setArming()
 {
     mode = 2; // blinking state
 }
