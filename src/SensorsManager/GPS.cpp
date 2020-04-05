@@ -135,5 +135,3 @@ void GPS::update()
 			}*/
 	}
 }
-}
-;
