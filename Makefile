@@ -52,11 +52,11 @@ clean:
 
 # checks the executable and symlinks to the output
 .PHONY: all
-all:
+all:$(BIN_PATH)/$(BIN_NAME)
 	@echo "Building navio"
 	# build Navio files
 	$(MAKE) -C $(NAVIO_PATH) all
-	$(BIN_PATH)/$(BIN_NAME)
+	
 	@echo "Making symlink: $(BIN_NAME) -> $<"
 	@$(RM) $(BIN_NAME)
 	@ln -s $(BIN_PATH)/$(BIN_NAME) $(BIN_NAME)
