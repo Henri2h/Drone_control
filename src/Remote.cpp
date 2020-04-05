@@ -104,9 +104,9 @@ private:
 		char const *comp_str_2 = to_string(dt->ang[2]).c_str(); // comp ang
 
 		// pid
-		char const *pid_str_0 = to_string(dt->controller_gains_rates[0]).c_str();
-		char const *pid_str_1 = to_string(dt->controller_gains_rates[1]).c_str();
-		char const *pid_str_2 = to_string(dt->controller_gains_rates[2]).c_str();
+		char const *pid_str_0 = to_string(dt->controller_gains[0]).c_str();
+		char const *pid_str_1 = to_string(dt->controller_gains[1]).c_str();
+		char const *pid_str_2 = to_string(dt->controller_gains[2]).c_str();
 
 		// sending data
 		ws->send(time_str, strlen(time_str), opCode); // time
@@ -152,8 +152,8 @@ private:
 
 	static void start_remote(Data *data_i, float *time_now_in)
 	{
-		static Data *dt = data_i;
-		static float *time_pointer = time_now_in;
+		Data *dt = data_i;
+		float *time_pointer = time_now_in;
 
 		FileManagement::Log("REMOTE", "Started");
 		Hub h;
