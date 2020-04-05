@@ -1,7 +1,7 @@
 #include "SensorManager.h"
 
 SensorManager::SensorManager(){
-    isLooping = false;
+    SensorManager::isLooping = false;
 }
 
 void SensorManager::thread_update_loop(double *status)
