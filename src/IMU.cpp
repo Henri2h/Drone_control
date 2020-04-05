@@ -35,6 +35,8 @@ void IMU::computeOffsets()
         accOffset[i] = 0;
     }
 
+    int samples = 600; // user defined ratio : TODO : see what is the minimum value
+
     for (size_t i = 0; i < samples; i++) // add all the samples
     {
         update();
