@@ -306,7 +306,7 @@ private:
 						}
 						else
 						{
-							FileManagement::Log("Remote", "setFilter : parameter unknown : |" +  L_r[0] + "|" +  L_r[1] +"|");
+							FileManagement::Log("Remote", "setFilter : parameter unknown : |" + L_r[0] + "|" + L_r[1] + "|");
 							ws->send("KO", 2, opCode);
 						}
 					}
@@ -327,22 +327,26 @@ private:
 							ws->send("OK", 2, opCode);
 						}
 					}
-					else if(L_r[0].compare("#SetGainsRate") == 0){
-						cout << L_r[1]  << "\n";
-						dt->controller_gains[pid_roll] = std::stof(L_r[1]);
-						cout <<"gains : " << dt->controller_gains[pid_roll] << "\n";
+					else if (L_r[0].compare("#SetGainsRate") == 0)
+					{
+						
+						cout << L_r.size << "arguments : 1: " << L_r[1] << " 2: " << L_r[2] << "\n";
+						int index = std::stoi(L_r[1]);
+						// set values
+						dt->controller_gains[index] = std::stof(L_r[1]);
+						cout << "Set gains : " << dt->controller_gains[index] << "\n";
 						ws->send("OK", 2, opCode);
 					}
 					else
 					{
-						FileManagement::Log("Remote", "command unknown : |" +  L_r[0] + "|" +  L_r[1] +"|");
+						FileManagement::Log("Remote", "command unknown : |" + L_r[0] + "|" + L_r[1] + "|");
 						ws->send("KO", 2, opCode);
 					}
 				}
 				else
 				{
 					FileManagement::Log("Remote", "command unknown : |" + r + "|");
-					cout << "L_r size : " <<L_r.size() << "\n";
+					cout << "L_r size : " << L_r.size() << "\n";
 					ws->send("KO", 2, opCode);
 				}
 			}
