@@ -6,10 +6,12 @@ BUILD_PATH = build
 BIN_PATH = $(BUILD_PATH)/bin
 
 # executable # 
-BIN_NAME = runner
+BIN_NAME = Drone
 
 # extensions #
 SRC_EXT = cpp
+
+NAVIO = ../includes/Navio
 
 # code lists #
 # Find all source files in the source directory, sorted by
@@ -50,9 +52,15 @@ clean:
 	@$(RM) -r $(BUILD_PATH)
 	@$(RM) -r $(BIN_PATH)
 
+# build navio
+.PHONY: navio
+navio:
+	@echo "Building NAVIO"
+	$(MAKE) -C ../includes/Navio all
+
 # checks the executable and symlinks to the output
 .PHONY: all
-all:$(BIN_PATH)/$(BIN_NAME)
+all:$(BIN_PATH)/$(BIN_NAME) navio
 	@echo "Building navio"
 	# build Navio files
 	$(MAKE) -C $(NAVIO_PATH) all
@@ -64,7 +72,7 @@ all:$(BIN_PATH)/$(BIN_NAME)
 # Creation of the executable
 $(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
 	@echo "Linking: $@"
-	$(CXX) $(OBJECTS) -o $@
+	$(CXX) $(OBJECTS) -L$(NAVIO) -lnavio  -lrt -lpthread -lpigpio -lpthread -L. -luWS -lssl -lcrypto -lz -luv -lncurses -o $@
 
 # Add dependency files, if they exist
 -include $(DEPS)

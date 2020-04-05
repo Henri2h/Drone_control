@@ -3,7 +3,6 @@
 
 
 #include <chrono>
-
 #include "Ref.h"
 
 class Data
