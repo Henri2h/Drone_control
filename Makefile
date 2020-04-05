@@ -52,7 +52,11 @@ clean:
 
 # checks the executable and symlinks to the output
 .PHONY: all
-all: $(BIN_PATH)/$(BIN_NAME)
+all:
+	@echo "Building navio"
+	# build Navio files
+	$(MAKE) -C $(NAVIO_PATH) all
+	$(BIN_PATH)/$(BIN_NAME)
 	@echo "Making symlink: $(BIN_NAME) -> $<"
 	@$(RM) $(BIN_NAME)
 	@ln -s $(BIN_PATH)/$(BIN_NAME) $(BIN_NAME)
@@ -66,8 +70,6 @@ $(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
 -include $(DEPS)
 
 
-# build Navio files
-$(MAKE) -C $(NAVIO_PATH) all
 
 # Source file rules
 # After the first compilation they will be joined with the rules from the

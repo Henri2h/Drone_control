@@ -17,7 +17,6 @@ OBJECTS = $(SOURCES:$(SRC_PATH)/%.$(SRC_EXT)=$(BUILD_PATH)/%.o)
 
 all:
 	$(MAKE) -C ../includes/Navio all
-
 	$(CXX) -std=c++11 $(INCLUDES) $(OBJECTS) Drone.cpp -L$(NAVIO) -lnavio  -lrt -lpthread -lpigpio -lpthread -L. -luWS -lssl -lcrypto -lz -luv -lncurses -o Drone 
 
 clean:
