@@ -1,6 +1,6 @@
 #include "Remote.h"
 
-static void Remote::sendData(WebSocket<SERVER> *ws, float *values, float *time_pointer, OpCode opCode)
+void Remote::sendData(WebSocket<SERVER> *ws, float *values, float *time_pointer, OpCode opCode)
 {
 	// preparing results :
 	char const *time_str = to_string(*time_pointer).c_str();
@@ -15,7 +15,7 @@ static void Remote::sendData(WebSocket<SERVER> *ws, float *values, float *time_p
 	ws->send(time_str, strlen(time_str), opCode);
 }
 
-static void Remote::sendData(WebSocket<SERVER> *ws, int *values, float *time_pointer, OpCode opCode)
+void Remote::sendData(WebSocket<SERVER> *ws, int *values, float *time_pointer, OpCode opCode)
 {
 	// preparing results :
 	char const *time_str = to_string(*time_pointer).c_str();
@@ -30,7 +30,7 @@ static void Remote::sendData(WebSocket<SERVER> *ws, int *values, float *time_poi
 	ws->send(time_str, strlen(time_str), opCode);
 }
 
-static void Remote::sendDataL(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, int length, OpCode opCode)
+void Remote::sendDataL(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, int length, OpCode opCode)
 {
 	// preparing results :
 	char const *time_str = to_string(*time_pointer).c_str();
@@ -45,7 +45,7 @@ static void Remote::sendDataL(WebSocket<SERVER> *ws, Data *dt, float *time_point
 	ws->send(time_str, strlen(time_str), opCode);
 }
 
-static void Remote::sendFStatus(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, OpCode opCode)
+void Remote::sendFStatus(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, OpCode opCode)
 {
 	/*
 		0 : time
@@ -126,7 +126,7 @@ static void Remote::sendFStatus(WebSocket<SERVER> *ws, Data *dt, float *time_poi
 	ws->send(pid_str_2, strlen(pid_str_2), opCode);
 }
 
-static Remote::std::vector<std::string> split(const std::string &s, char delimiter)
+std::vector<std::string> Remote::split(const std::string &s, char delimiter)
 {
 	std::vector<std::string> tokens;
 	std::string token;
@@ -138,7 +138,7 @@ static Remote::std::vector<std::string> split(const std::string &s, char delimit
 	return tokens;
 }
 
-static void Remote::start_remote(Data *data_i, float *time_now_in)
+void Remote::start_remote(Data *data_i, float *time_now_in)
 {
 	static Data *dt = data_i;
 	static float *time_pointer = time_now_in;

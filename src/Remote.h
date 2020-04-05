@@ -17,7 +17,7 @@ private:
 
 	static void sendData(WebSocket<SERVER> *ws, float *values, float *time_pointer, OpCode opCode);
 	static void sendData(WebSocket<SERVER> *ws, int *values, float *time_pointer, OpCode opCode);
-	static void sendDataL(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, int length, OpCode opCode);S
+	static void sendDataL(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, int length, OpCode opCode);
 	static void sendFStatus(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, OpCode opCode);
 	static std::vector<std::string> split(const std::string &s, char delimiter);
 
