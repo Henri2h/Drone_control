@@ -57,7 +57,7 @@ clean:
 .PHONY: navio
 navio:
 	@echo "Building NAVIO"
-	$(MAKE) -C ../includes/Navio all
+	$(MAKE) -C $(NAVIO) all
 
 # checks the executable and symlinks to the output
 .PHONY: all
