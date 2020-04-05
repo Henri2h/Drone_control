@@ -19,10 +19,10 @@
 
 #include "RCInputManager.cpp"
 #include "ServoManager.cpp"
-#include "IMU.cpp"
+#include "IMU.h"
 #include "Stab/Stabilisation.cpp"
 #include "LEDManager.cpp"
-#include "Remote.cpp"
+#include "Remote.h"
 #include "SensorsManager/SensorManager.cpp"
 
 
