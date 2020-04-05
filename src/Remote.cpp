@@ -329,8 +329,8 @@ private:
 					}
 					else if(L_r[0].compare("#SetGainsRate") == 0){
 						cout << L_r[1]  << "\n";
-						dt->controller_gains_rates[pid_roll] = std::stof(L_r[1]);
-						cout <<"gains : " << dt->controller_gains_rates[pid_roll] << "\n";
+						dt->controller_gains[pid_roll] = std::stof(L_r[1]);
+						cout <<"gains : " << dt->controller_gains[pid_roll] << "\n";
 						ws->send("OK", 2, opCode);
 					}
 					else
