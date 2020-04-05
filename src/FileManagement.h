@@ -7,6 +7,7 @@
 
 #include <dirent.h>
 #include <sstream>
+#include <iostream>
 #include <ctime>
 #include <unistd.h>
 
