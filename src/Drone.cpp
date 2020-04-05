@@ -333,7 +333,7 @@ void MotorControlMode()
 		rc->read(data.commands);
 		for (size_t i = 0; i < 4; i++)
 		{
-			data.motors_output[i] == 1000;
+			data.motors_output[i] = 1000;
 		}
 		data.motors_output[pos] = data.commands[cmd_throttle];
 		servo->setDuty(data);
