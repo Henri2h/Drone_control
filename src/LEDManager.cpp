@@ -1,106 +1,86 @@
-#include <Navio2/Led_Navio2.h>
-#include <Navio+/Led_Navio.h>
-#include <Common/Util.h>
-#include <unistd.h>
-#include <memory>
+#include "LEDManager.h"
 
-class LEDManager
+std::unique_ptr<Led> LEDManager::get_led()
 {
-  private:
-    std::unique_ptr<Led> get_led()
+    if (get_navio_version() == NAVIO2)
     {
-        if (get_navio_version() == NAVIO2)
-        {
-            auto ptr = std::unique_ptr<Led>{new Led_Navio2()};
-            return ptr;
-        }
-        else
-        {
-            auto ptr = std::unique_ptr<Led>{new Led_Navio()};
-            return ptr;
-        }
+        auto ptr = std::unique_ptr<Led>{new Led_Navio2()};
+        return ptr;
     }
-    std::unique_ptr<Led> led = get_led(); // save led
-
-    int rate = 300;
-    int mode = 0;
-
-  /* mode :
-     0 : KO or black
-     1 : OK
-     2 : Arming
-     3 : Armed
-    */
-
-    int updateIter = 0;
-
-  public:
-    LEDManager()
+    else
     {
-        if (!led->initialize())
-        {
-            std::cout << "[ LEDManager ] : Cannot initialize ...\n";
-            throw EXIT_FAILURE;
-        }
-        setKO();
-        std::cout << "[ LEDManager ] : Starting ...\n";
+        auto ptr = std::unique_ptr<Led>{new Led_Navio()};
+        return ptr;
     }
-  
-    void update()
+}
+
+LEDManager::LEDManager()
+{
+    if (!led->initialize())
     {
-        if (mode == 1 && updateIter == 0) // mode ok and start of the loop
-        {
-            led->setColor(Colors::Green);
-        }
+        std::cout << "[ LEDManager ] : Cannot initialize ...\n";
+        throw EXIT_FAILURE;
+    }
+    setKO();
+    std::cout << "[ LEDManager ] : Starting ...\n";
+}
 
-        if (mode == 2 && updateIter == 0) // mode arming and start of the loop
-        {
-            led->setColor(Colors::Cyan);
-        }
-        if ((mode == 1 || mode == 2) && updateIter == rate)
-        {
-            led->setColor(Colors::Black);
-        }
-
-        updateIter++;
-
-        if (updateIter > 2 * rate)
-        {
-            updateIter = 0;
-        }
+void LEDManager::update()
+{
+    if (mode == 1 && updateIter == 0) // mode ok and start of the loop
+    {
+        led->setColor(Colors::Green);
     }
 
-    void setKO()
+    if (mode == 2 && updateIter == 0) // mode arming and start of the loop
     {
-        mode = 0;
-        led->setColor(Colors::Red);
+        led->setColor(Colors::Cyan);
     }
-
-    void setOK()
+    if ((mode == 1 || mode == 2) && updateIter == rate)
     {
-        mode = 1; // blinking state
-    }
-
-    void setArmed()
-    {
-        mode = 3;
-        led->setColor(Colors::Blue);
-    }
-
-    void setBlack()
-    {
-        mode = 0;
         led->setColor(Colors::Black);
     }
 
-    void setArming()
+    updateIter++;
+
+    if (updateIter > 2 * rate)
     {
-        mode = 2; // blinking state
+        updateIter = 0;
     }
-    
-    void backToPrevious(){ // prevent deleting KO state
-        if(mode > 0){
-            mode = 1;
-        }
+}
+
+void LEDManager::setKO()
+{
+    mode = 0;
+    led->setColor(Colors::Red);
+}
+
+void LEDManager::setOK()
+{
+    mode = 1; // blinking state
+}
+
+void LEDManager::setArmed()
+{
+    mode = 3;
+    led->setColor(Colors::Blue);
+}
+
+void LEDManager::setBlack()
+{
+    mode = 0;
+    led->setColor(Colors::Black);
+}
+
+void setArming()
+{
+    mode = 2; // blinking state
+}
+
+void LEDManager::backToPrevious()
+{ // prevent deleting KO state
+    if (mode > 0)
+    {
+        mode = 1;
     }
-};
+}
