@@ -34,11 +34,11 @@ var vueApp = new Vue({
 
   },
   methods: {
-    handleSubmit() {
+    handleSubmit: function() {
       // Send data to the server or update your stores and such.
       localStorage.websocket_url = this.host;
     },
-    setGains(pos) {
+    setGains: function(pos) {
       console.log(pos);
       if (pos < this.gains.length) {
         var data = {
@@ -54,7 +54,7 @@ var vueApp = new Vue({
       else { console.log("Invalid length"); }
     }
   },
-  inputKeyUp(){
+  inputKeyUp: function() {
      // Clear the timeout if it has already been set.
     // This will prevent the previous task from executing
     // if it has been less than <MILLISECONDS>
