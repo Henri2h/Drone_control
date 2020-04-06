@@ -79,7 +79,6 @@ vueApp.worker.addEventListener('message', function (e) {
     var dt = now - time_start;
     if (iter == 50) {
         vueApp.frequency = (iter / dt * 1000).toPrecision(4);
-        console.log(dt + " : " + iter + " : " + iter / dt * 1000);
         time_start = new Date();
         iter = 0;
     }
