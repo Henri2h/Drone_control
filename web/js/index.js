@@ -28,7 +28,9 @@ var vueApp = new Vue({
     gps_longitude_precision: '',
     host: localStorage.websocket_url,
     frequency: '0',
-    worker: new Worker('js/Worker_Client.js')
+    worker: new Worker('js/Worker_Client.js'),
+    timeout: null,
+    couldUpdateGains:true
 
   },
   methods: {
@@ -38,7 +40,7 @@ var vueApp = new Vue({
     },
     setGains(pos) {
       console.log(pos);
-      if (pos < gains.length) {
+      if (pos < this.gains.length) {
         var data = {
           command: "setGain",
           data: {
@@ -51,5 +53,17 @@ var vueApp = new Vue({
       }
       else { console.log("Invalid length"); }
     }
+  },
+  inputKeyUp(){
+     // Clear the timeout if it has already been set.
+    // This will prevent the previous task from executing
+    // if it has been less than <MILLISECONDS>
+    clearTimeout(this.timeout);
+    this.couldUpdateGains = false;
+
+    // Make a new timeout set to go off in 1000ms (1 second)
+    this.timeout = setTimeout(function () {
+        this.couldUpdateGains = true;
+    }, 1000);
   }
 })

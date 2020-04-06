@@ -1,6 +1,6 @@
 
-if(localStorage.getItem("websocket_url") == null){
-    localStorage.websocket_url = "ws://"+window.location.hostname+":8766";
+if (localStorage.getItem("websocket_url") == null) {
+    localStorage.websocket_url = "ws://" + window.location.hostname + ":8766";
 }
 
 console.log("Started chart setup");
@@ -34,9 +34,11 @@ vueApp.worker.addEventListener('message', function (e) {
         vueApp.accel_y = parseFloat(e.data[10]).toPrecision(4);
         vueApp.accel_z = parseFloat(e.data[11]).toPrecision(4);
     }
-    else if(e.data[0] == "Gains"){
-        e.data.shift();
-        vueApp.gains = e.data;
+    else if (e.data[0] == "Gains") {
+        if (vueApp.couldUpdateGains) {
+            e.data.shift();
+            vueApp.gains = e.data;
+        }
     }
     else {
         vueApp.displayGains = e.data[1];
@@ -76,7 +78,7 @@ vueApp.worker.addEventListener('message', function (e) {
     var now = new Date();
     var dt = now - time_start;
     if (iter == 50) {
-        vueApp.frequency = (iter/dt*1000).toPrecision(4);
+        vueApp.frequency = (iter / dt * 1000).toPrecision(4);
         console.log(dt + " : " + iter + " : " + iter / dt * 1000);
         time_start = new Date();
         iter = 0;
