@@ -19,13 +19,11 @@ function connect(url) {
 
     socket.onmessage = function (event) {
         Data.push(event.data);
-        console.log("Pos :", Data.length - 2, event.data); // remove firs item from count
+        //console.log("Pos :", Data.length - 2, event.data); // remove firs item from count
 
         if (Data.length - 1 >= toRead) {
             self.postMessage(Data)
             setReadStatusTrue();
-
-            console.log("Done");
         }
     }
 
