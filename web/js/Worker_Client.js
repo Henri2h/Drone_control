@@ -70,6 +70,13 @@ function getStatus() {
 }
 
 
+function getGains(){
+    Data = ["Gains"];
+    setReadStatusFalse();
+    exampleSocket.send("#GetGainsRate");
+    toRead = 9;
+}
+
 
 
 var mode = 0;
