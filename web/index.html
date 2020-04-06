@@ -232,7 +232,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[0]" placeholder="Gains" v-on:keyup="inputKeyUp()">
+          <input class="input" type="text" v-model="gains[0]" placeholder="Gains" v-on:keyup.delete="inputKeyUp">
         </div>
         <div class="control">
           <button class="button is-info">

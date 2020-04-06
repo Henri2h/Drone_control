@@ -96,6 +96,7 @@ function update() {
     if (connected) {
         // send commands
         if (commands.length > 0) {
+            console.log(commands[0]);
             if (commands[0].command == "setGain") {
                 setGains(command[0].data.pos, command[0].data.value);
             }

@@ -64,6 +64,6 @@ var vueApp = new Vue({
     // Make a new timeout set to go off in 1000ms (1 second)
     this.timeout = setTimeout(function () {
         this.couldUpdateGains = true;
-    }, 1000);
+    }, 3000);
   }
 })
