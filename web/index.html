@@ -194,9 +194,9 @@
                 <div class="content">
 
                   <h2 class="title is-4">PID Pitch and Roll</h2>
-                  <strong>Kp :</strong> {{kp}}<br>
-                  <strong>Ki :</strong> {{ki}}<br>
-                  <strong>Kd :</strong> {{kd}}<br>
+                  <strong>Kp :</strong> {{gains[0]}}<br>
+                  <strong>Ki :</strong> {{gains[1]}}<br>
+                  <strong>Kd :</strong> {{gains[2]}}<br>
                 </div>
               </div>
             </article>
@@ -211,15 +211,172 @@
                 <div class="content">
 
                   <h2 class="title is-4">PID Yaw</h2>
-                  <strong>Kp :</strong> {{kp}}<br>
-                  <strong>Ki :</strong> {{ki}}<br>
-                  <strong>Kd :</strong> {{kd}}<br>
+                  <strong>Kp :</strong> {{gains[6]}}<br>
+                  <strong>Ki :</strong> {{gains[7]}}<br>
+                  <strong>Kd :</strong> {{gains[8]}}<br>
                 </div>
               </div>
             </article>
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="section">
+      <h2 class="title">Set Gains :</h2>
+      <form class="field has-addons" @submit.prevent="setGains(0)">
+
+        <div class="control">
+          <div class="button is-primary">
+            Gains Pitch Kp
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[0]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
+      <form class="field has-addons" @submit.prevent="setGains(1)">
+        <div class="control">
+          <div class="button is-primary">
+            Gains Pitch Ki
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[1]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
+      <form class="field has-addons" @submit.prevent="setGains(2)">
+        <div class="control">
+          <div class="button is-primary">
+            Gains Pitch Kd
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[2]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
+      <form class="field has-addons" @submit.prevent="setGains(3)">
+        <div class="control">
+          <div class="button is-primary">
+            Gains Roll Kp
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[3]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
+      <form class="field has-addons" @submit.prevent="setGains(4)">
+        <div class="control">
+          <div class="button is-primary">
+            Gains Roll Ki
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[4]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
+      <form class="field has-addons" @submit.prevent="setGains(5)">
+        <div class="control">
+          <div class="button is-primary">
+            Gains Roll Kd
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[5]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
+      <form class="field has-addons" @submit.prevent="setGains(6)">
+        <div class="control">
+          <div class="button is-primary">
+            Gains Yaw Kp
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[6]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
+      <form class="field has-addons" @submit.prevent="setGains(7)">
+
+        <div class="control">
+          <div class="button is-primary">
+            Gains Yaw Ki
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[7]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
+      <form class="field has-addons" @submit.prevent="setGains(8)">
+        <div class="control">
+          <div class="button is-primary">
+            Gains Yaw Kd
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[8]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
+      <form class="field has-addons" @submit.prevent="setGains(9)">
+
+        <div class="control">
+          <div class="button is-primary">
+            Gains Pitch Kp
+          </div>
+        </div>
+        <div class="control">
+          <input class="input" type="text" v-model="gains[9]" placeholder="Gains">
+        </div>
+        <div class="control">
+          <button class="button is-info">
+            Set
+          </button>
+        </div>
+      </form>
     </section>
 
     <section class="section">
@@ -234,8 +391,8 @@
           </button>
         </div>
       </form>
-  </div>
-  </section>
+    </section>
+
   </div>
 
 
