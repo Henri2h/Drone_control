@@ -167,21 +167,6 @@
             </article>
           </div>
         </div>
-        <div class="column">
-          <div class="box">
-            <article class="media">
-              <div class="media-content">
-                <div class="content">
-
-                  <h2 class="title is-4">Controler</h2>
-                  <strong>Kp :</strong> {{kp}}<br>
-                  <strong>Ki :</strong> {{ki}}<br>
-                  <strong>Kd :</strong> {{kd}}<br>
-                </div>
-              </div>
-            </article>
-          </div>
-        </div>
       </div>
     </section>
     <section class="section">
@@ -193,7 +178,7 @@
               <div class="media-content">
                 <div class="content">
 
-                  <h2 class="title is-4">PID Pitch and Roll</h2>
+                  <h2 class="title is-4">PID Pitch</h2>
                   <strong>Kp :</strong> {{gains[0]}}<br>
                   <strong>Ki :</strong> {{gains[1]}}<br>
                   <strong>Kd :</strong> {{gains[2]}}<br>
@@ -202,7 +187,21 @@
             </article>
           </div>
         </div>
+        <div class="column">
+          <div class="box">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
 
+                  <h2 class="title is-4">PID Roll</h2>
+                  <strong>Kp :</strong> {{gains[3]}}<br>
+                  <strong>Ki :</strong> {{gains[4]}}<br>
+                  <strong>Kd :</strong> {{gains[5]}}<br>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
 
         <div class="column">
           <div class="box">
