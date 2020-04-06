@@ -19,7 +19,6 @@ function connect(url) {
 
     socket.onmessage = function (event) {
         Data.push(event.data);
-
         if (Data.length - 1 >= toRead) {
             self.postMessage(Data)
             setReadStatusTrue();
@@ -92,10 +91,10 @@ function update() {
                     getFStatus();
                 }
                 else if(mode == 8){
-                    getGains();
+                    getStatus();
                 }
                 else {
-                    getStatus();
+                    getGains();
                     mode = 0;
                 }
                 iter++;
