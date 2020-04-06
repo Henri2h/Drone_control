@@ -50,7 +50,7 @@ void Remote::sendGains(WebSocket<SERVER> *ws, Data *data, float *time_pointer, i
 	char const *time_str = to_string(*time_pointer).c_str();
 	for (size_t i = 0; i < length; i++)
 	{
-		cout << "i : " << i << " : " << data->controller_gains[i] << " ";
+		//cout << "i : " << i << " : " << data->controller_gains[i] << " ";
 		char const *val = to_string(data->controller_gains[i]).c_str();
 		// sending data
 		ws->send(val, strlen(val), opCode);
