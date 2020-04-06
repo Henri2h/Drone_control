@@ -27,7 +27,8 @@ var vueApp = new Vue({
     gps_latitude_precision: '',
     gps_longitude_precision: '',
     host: localStorage.websocket_url,
-    frequency: '0'
+    frequency: '0',
+    worker: new Worker('js/Worker_Client.js')
 
   },
   methods: {
@@ -35,8 +36,20 @@ var vueApp = new Vue({
       // Send data to the server or update your stores and such.
       localStorage.websocket_url = this.host;
     },
-    setGains(pos){
+    setGains(pos) {
       console.log(pos);
+      if (pos < gains.length) {
+        var data = {
+          command: "setGain",
+          data: {
+            pos: pos,
+            value: this.gains[pos]
+          }
+        };
+
+        this.worker.postMessage(JSON.stringify(data));
+      }
+      else { console.log("Invalid length"); }
     }
   }
 })

@@ -7,6 +7,7 @@ var connected = false;
 var loaded = false;
 
 var Data = [];
+var commands = []
 
 var readStatus = false;
 var canChangeReadStatus = true;
@@ -42,7 +43,14 @@ function connect(url) {
 
 self.onmessage = function (event) {
     this.console.log("Event : " + event.data);
-    this.connect(event.data);
+    var data = this.JSON.parse(event.data);
+
+    if (data.command == "connect") {
+        this.connect(data.data);
+    }
+    else {
+        this.commands.push(data);
+    }
 }
 
 function setReadStatusTrue() {
@@ -78,12 +86,22 @@ function getGains() {
     toRead = 9 + 1;
 }
 
-
+function setGains(pos, value) {
+    socket.send("#SetGainsRate " + pos + " " + value);
+    toRead = 1;
+}
 
 var mode = 0;
 function update() {
     if (connected) {
-        if (iter >= 0) {
+        // send commands
+        if (commands.length > 0) {
+            if (commands[0].command == "setGain") {
+                setGains(command[0].data.pos, command[0].data.value);
+            }
+        }
+
+        else if (iter >= 0) {
             if (readStatus) {
 
                 mode++;

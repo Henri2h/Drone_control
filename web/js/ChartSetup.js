@@ -8,15 +8,19 @@ console.log("Started chart setup");
 var E_Gyration_plot = document.getElementById('gyrationPlot'); // chart
 var E_Acceleration_plot = document.getElementById('accelerationPlot'); // chart
 
-var worker = new Worker('js/Worker_Client.js');
-worker.postMessage(localStorage.websocket_url);
+
+var data = {
+    command: "connect",
+    data: localStorage.websocket_url
+};
+vueApp.worker.postMessage(JSON.stringify(data));
 var iter = 0;
 Accel = []
 
 
 var time_start = new Date();
 // Setup an event listener that will handle messages received from the worker.
-worker.addEventListener('message', function (e) {
+vueApp.worker.addEventListener('message', function (e) {
     // Log the workers message.
     if (e.data[0] == "FStatus") {
         //parallel(e.data);
