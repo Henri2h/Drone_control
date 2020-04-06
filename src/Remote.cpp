@@ -265,12 +265,6 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 					// nothing
 					std::cout << "#ListFiles\n";
 				}
-
-				else
-				{
-					FileManagement::Log("Remote", "command unknown : |" + r + "|");
-					ws->send("KO", 2, opCode);
-				}
 				else if (L_r[0].compare("#GetGainsRate") == 0)
 				{
 					sendGains(ws, data, time_pointer, gains_length, opCode);
@@ -278,9 +272,9 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				else
 				{
 					FileManagement::Log("Remote", "command unknown : |" + r + "|");
-					cout << "L_r size : " << L_r.size() << "\n";
 					ws->send("KO", 2, opCode);
 				}
+				
 			}
 			else if (L_r.size() > 1)
 			{
