@@ -99,10 +99,6 @@ void Stabilisation::getValuesStabAttitude(Data &data, float dt)
         std::cout << "kp_atti : " << kp_atti << " kp_rate : " << kp_rate << " kd_rate : " << kd_rate << "\n";
     }
 
-    data.status[status_gains_atti_kp] = kp_atti;
-    data.status[status_gains_rate_kp] = kp_rate;
-    data.status[status_gains_rate_kd] = kd_rate;
-
     attitude_c.update_pid(kp_atti, kp_rate, kd_rate); // update gains
     attitude_c.update(data, cmd, dt);
 }
