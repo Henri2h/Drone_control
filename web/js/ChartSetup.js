@@ -23,16 +23,45 @@ var time_start = new Date();
 vueApp.worker.addEventListener('message', function (e) {
     // Log the workers message.
     if (e.data[0] == "FStatus") {
+        e.data.shift();
         //parallel(e.data);
 
         //addPointAccel(e.data);
         //addPointGyr(e.data);
+        /*
+		0 : time
+		1 : throttle
+		2 : pitch
+		3 : roll
+		4 : yaw
+		5 : gyr x
+		6 : gyr y
+		7 : gyr z
+		8 : acc x
+		9 : acc y
+		10 : acc z
+		11 : comp x
+		12 : comp y
+		13 : comp z
+		14 : pid pitch
+		15 : pid roll
+		16 : pid yaw
 
-        Accel.push([parseFloat(e.data[9]), parseFloat(e.data[10]), parseFloat(e.data[11])]);
+        */
 
-        vueApp.accel_x = parseFloat(e.data[9]).toPrecision(4);
-        vueApp.accel_y = parseFloat(e.data[10]).toPrecision(4);
-        vueApp.accel_z = parseFloat(e.data[11]).toPrecision(4);
+        Accel.push([parseFloat(e.data[8]), parseFloat(e.data[9]), parseFloat(e.data[10])]);
+
+        vueApp.gyr_x = parseFloat(e.data[5]).toPrecision(4);
+        vueApp.gyr_y = parseFloat(e.data[6]).toPrecision(4);
+        vueApp.gyr_z = parseFloat(e.data[7]).toPrecision(4);
+
+        vueApp.accel_x = parseFloat(e.data[8]).toPrecision(4);
+        vueApp.accel_y = parseFloat(e.data[9]).toPrecision(4);
+        vueApp.accel_z = parseFloat(e.data[10]).toPrecision(4);
+        
+        vueApp.comp_x = parseFloat(e.data[11]).toPrecision(4);
+        vueApp.comp_y = parseFloat(e.data[12]).toPrecision(4);
+        vueApp.comp_z = parseFloat(e.data[13]).toPrecision(4);
     }
     else if (e.data[0] == "Gains") {
         if (vueApp.couldUpdateGains) {

@@ -2,7 +2,7 @@
 Title : Drone control
 Description : School project
 Author : made by Henri2h
-Year : 2018 - 2019
+Year : 2018 - 2020
 */
 #include "Drone.h"
 
@@ -222,7 +222,6 @@ void ModeFlight()
 	setup();
 
 	// timer variables
-	double next_call = 0;
 	last_call = TimeM::now(); // reset timmer
 	// loop
 	while (true)

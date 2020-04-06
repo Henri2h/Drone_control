@@ -7,6 +7,12 @@ var vueApp = new Vue({
     gyr_x: '0.00',
     gyr_y: '0.00',
     gyr_z: '0.00',
+    mag_x:'',
+    mag_y:'',
+    mag_z:'',
+    comp_x:'',
+    comp_y:'',
+    comp_z:'',
 
     mode: 'default',
     saving: '',
