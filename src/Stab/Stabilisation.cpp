@@ -69,7 +69,6 @@ void Stabilisation::getValuesExperiments(Data &data, float dt)
 
 void Stabilisation::getValuesStabRates(Data &data, float dt)
 {
-
     rate_c.update_pid(data.controller_gains);
     rate_c.update(cmd, data.rates, dt);
 }
@@ -210,7 +209,8 @@ int *Stabilisation::Stabilize(Data &data, float dt)
         // update orders
         if (data.stabilisation_mode == 1) // attitude mode
         {
-            getValuesStabAttitude(data, dt);
+            getValuesStabAttitude(data, dt); // get commands from outer loop
+            getValuesStabRates(data, dt); // feed in inner loop
         }
         else // rate mode
         {

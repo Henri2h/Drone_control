@@ -29,7 +29,7 @@
 
 
 // gains
-#define gains_length 9
+#define gains_length 18
 // pich
 #define gains_rates_pitch_kp 0
 #define gains_rates_pitch_ki 1
@@ -43,6 +43,17 @@
 #define gains_rates_yaw_ki 7
 #define gains_rates_yaw_kd 8
 
+#define gains_pos_pitch_kp 9
+#define gains_pos_pitch_ki 10
+#define gains_pos_pitch_kd 11
+// roll
+#define gains_pos_roll_kp 12
+#define gains_pos_roll_ki 13
+#define gains_pos_roll_kd 14
+// yaw
+#define gains_pos_yaw_kp 15
+#define gains_pos_yaw_ki 16
+#define gains_pos_yaw_kd 17
 
 // switch values in the radio
 // in order to use my recieve wich has a builtin mode to have 6 different values on one chanel
