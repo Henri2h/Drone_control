@@ -62,14 +62,14 @@ function getFStatus() {
     Data = ["FStatus"];
     setReadStatusFalse();
     socket.send("#FStatus");
-    toRead = 17;
+    toRead = 16 + 1;
 }
 
 function getStatus() {
     Data = ["Status"];
     setReadStatusFalse();
     socket.send("#Status");
-    toRead = 21;
+    toRead = 20 + 1;
 }
 
 
@@ -77,7 +77,7 @@ function getGains() {
     Data = ["Gains"];
     setReadStatusFalse();
     socket.send("#GetGainsRate");
-    toRead = 9;
+    toRead = 9 + 1;
 }
 
 
