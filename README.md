@@ -4,9 +4,14 @@ This is a school project in which I've build a drone and the control software
 
 # Current status :
 
-Fixing stabilisation in speed with the yaw axis
+Rate controll working
+
+# Accessing the web interface :
+Use your favoirite web server to serve the file in web/
 
 # TODO :
+- [x] : Add a way to tune the controller with radio
+- [x] : Add a way to tune the controller with web interface
 
-- [ ] : Tune correctly the rate controller
-- [ ] : Tune the attitude controller
+- [x] : Rate controll
+- [ ] : Attitude controll : WIP
