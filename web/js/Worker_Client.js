@@ -89,6 +89,9 @@ function update() {
                 if (mode < 8) {
                     getFStatus();
                 }
+                else if(mode == 8){
+                    getGains();
+                }
                 else {
                     getStatus();
                     mode = 0;
