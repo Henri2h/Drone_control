@@ -100,8 +100,8 @@ void GPS::update()
 		previousStatus_gps_fix = status[status_gps_fix];
 		status[status_gps_get_fix] = pos_data[1]; // getFixOk
 
-		/*printf("gpsFixOk: %d\n", ((int)pos_data[1] & 0x01));
-
+		printf("gpsFixOk: %d\n", (int)pos_data[1]);
+		/*
 			printf("gps Fix status: ");
 			switch ((int)pos_data[0])
 			{

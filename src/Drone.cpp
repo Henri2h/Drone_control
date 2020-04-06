@@ -44,11 +44,14 @@ void safety()
 				data.isArming = true;
 				arming_t_started = TimeM::now();
 				led->setArming();
+
+				data.status[status_armed] = 1;
 			}
 			else if (data.isArming && t_diff * pow(10, -9) > 2 && data.isArmed == false)
 			{
 				FileManagement::Log("Safety", "Armed");
 				data.isArmed = true;
+				data.status[status_armed] = 2;
 				led->setArmed();
 			}
 		}
@@ -57,6 +60,8 @@ void safety()
 			data.isArmed = false;
 			data.isArming = false;
 			led->backToPrevious();
+
+			data.status[status_armed] = 0;
 		}
 	}
 }
@@ -322,12 +327,9 @@ void MotorControlMode()
 			mvprintw(0, 8, s.c_str());
 			mvprintw(2, 0, drone.c_str());
 			refresh();
-			
-			
+
 			if (pos > 3)
 				pos = 0;
-
-			
 		}
 
 		rc->read(data.commands);
