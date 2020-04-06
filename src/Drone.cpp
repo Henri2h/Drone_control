@@ -267,7 +267,7 @@ void InputMode()
 	{
 		clear();
 		rc->read(data.commands);
-		for (int i = 0; i < 9; i++)
+		for (int i = 0; i < cmd_size; i++)
 		{
 			std::string s = std::to_string(data.commands[i]);
 			mvprintw(i, 1, s.c_str());

@@ -20,7 +20,7 @@ public:
     float acceleration[3] = {0, 0, 0};
     float rates[3] = {0, 0, 0};
 
-    int commands[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int commands[cmd_size];
     float commands_gen[4] = {0, 0, 0, 0}; // to have an idea of what commands we send to the control algorithm, in ° or in °/s
     float entree[4] = {0, 0, 0, 0};
 

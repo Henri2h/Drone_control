@@ -26,7 +26,7 @@ RCInputManager::RCInputManager()
 int RCInputManager::read(int commands[])
 {
 
-    for (size_t i = 0; i < 9; i++)
+    for (size_t i = 0; i < cmd_size; i++)
     {
         commands[i] = rcin->read(i);
         // reverse yaw command

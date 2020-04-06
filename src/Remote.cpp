@@ -335,11 +335,10 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				// gains
 				else if (L_r[0].compare("#SetGainsRate") == 0)
 				{
-					cout << L_r.size() << "arguments : 1: " << L_r[1] << " 2: " << L_r[2] << "\n";
 					int index = std::stoi(L_r[1]);
 					// set values
 					data->controller_gains[index] = std::stof(L_r[2]);
-					cout << "Set gains : " << data->controller_gains[index] << "\n";
+					cout << "Set gains : " << index << " : " << data->controller_gains[index] << "\n";
 					ws->send("OK", 2, opCode);
 				}
 

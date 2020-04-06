@@ -70,15 +70,16 @@ void Stabilisation::getValuesExperiments(Data &data, float dt)
 void Stabilisation::getValuesStabRates(Data &data, float dt)
 {
     // map kd
-    double kp_rate = utils::mapValue(data.commands[cmd_kp], 922, 2077, 0, 1);
-    double kd_rate = utils::mapValue(data.commands[cmd_kd], 922, 2077, 0, 1);
-    double ki_rate = utils::mapValue(data.commands[cmd_ki], 921, 2077, 0, 1);
+    int pos = data.status[status_gains_control_mode];
+    if (pos > 0)
+    {
+        pos--; // pos = 0 means, we don't read the values
+        data.controller_gains[pos*3] = utils::mapValue(data.commands[cmd_kp], 922, 2077, 0, 1);
+        data.controller_gains[pos*3+1] = utils::mapValue(data.commands[cmd_kd], 922, 2077, 0, 1);
+        data.controller_gains[pos*3+2] = utils::mapValue(data.commands[cmd_ki], 921, 2077, 0, 1);
+    }
 
-    data.status[status_gains_rate_kp] = kp_rate;
-    data.status[status_gains_rate_kd] = kd_rate;
-    data.status[status_gains_rate_ki] = ki_rate;
-
-    rate_c.update_pid(kp_rate, kd_rate, ki_rate);
+    rate_c.update_pid(data.controller_gains);
     rate_c.update(cmd, data.rates, dt, data.pid_debug);
 }
 
@@ -109,7 +110,20 @@ void Stabilisation::getValuesStabAttitude(Data &data, float dt)
 /// Change stabilisation depending on remote commands
 void Stabilisation::getStabilisationMode(Data &data)
 {
-    int other_mode = 4;
+    int value = data.commands[cmd_selection];
+    if (value > 1500 && selectionSliderWasOnBefore == false)
+    {
+        if(data.status[status_gains_control_mode] < 3){
+            data.status[status_gains_control_mode]++;
+        }
+        else data.status[status_gains_control_mode] = 0;
+        selectionSliderWasOnBefore = true;
+        std::cout << "[ status_gains_control_mode ]: " << data.status[status_gains_control_mode] << "\n";
+    }
+    else if (value < 1500 && selectionSliderWasOnBefore == true)
+    {
+        selectionSliderWasOnBefore = false;
+    }
 
     // 2 : indiciel
     // 3 : rampe

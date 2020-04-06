@@ -7,6 +7,8 @@
 #define cmd_kp 6
 #define cmd_kd 4
 #define cmd_ki 7
+#define cmd_selection 9
+#define cmd_size 10
 
 #define pos_x 0
 #define pos_y 1
@@ -71,20 +73,16 @@
 
 // gains
 #define status_stab_mode 11
-#define status_gains_atti_kp 12
-//d
-//i
-#define status_gains_rate_kp 13
-#define status_gains_rate_kd 14
-#define status_gains_rate_ki 15
+#define status_armed 12
+#define status_gains_control_mode 13
 
-#define status_experience_mode 16
-#define status_experience_time 17
-#define status_filter_mode 18
-#define status_filter_param 19
+#define status_experience_mode 14
+#define status_experience_time 15
+#define status_filter_mode 16
+#define status_filter_param 17
 
 // number of items
-#define status_length 20
+#define status_length 18
 
 #define order_Saving 0
 #define orders_DisplayGains 1

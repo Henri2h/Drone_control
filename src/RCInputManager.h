@@ -9,6 +9,8 @@
 #include <Common/Util.h>
 #include <memory>
 
+#include "Ref.h"
+
 #define READ_FAILED -1
 
 class RCInputManager

@@ -16,6 +16,8 @@ private:
     int pid_gains_attitude_max;
     float cmd[4];
 
+    bool selectionSliderWasOnBefore; // use this to change selection for changinq parameters
+
     // controll loop
     Attitude_Controller attitude_c;
     Rate_Controller rate_c;
