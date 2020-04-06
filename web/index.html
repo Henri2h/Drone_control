@@ -125,13 +125,14 @@
             <article class="media">
               <div class="media-content">
                 <div class="content">
-
                   <h2 class="title is-4">GPS</h2>
                   <strong>Fix</strong> {{gps_fix}}<br>
+                  <strong>Get fix</strong> {{gps_gett_fix}}<br>
                   <strong>Latitude</strong> {{gps_latitude}}<br>
                   <strong>Longitude</strong> {{gps_longitude}}<br>
-                  <strong>Precision Latitude</strong> {{gps_latitude_precision}}<br>
-                  <strong>Precision Longitude</strong> {{gps_longitude_precision}}<br>
+                  <strong>Height</strong> {{gps_height}}<br>
+                  <strong>Horizontal accuracy</strong> {{gps_h_accuracy}}<br>
+                  <strong>Vertical accuracy</strong> {{gps_v_accuracy}}<br>
                 </div>
               </div>
             </article>
@@ -143,13 +144,12 @@
               <div class="media-content">
                 <div class="content">
                   <h2 class="title is-4">Informations</h2>
-                  <strong>{{message}}</strong><br>
                   <strong>Mode :</strong> {{mode}}<br>
                   <strong>Saving :</strong> {{saving}}<br>
                   <strong>Display gains :</strong> {{displayGains}}<br>
-                  <strong>Frequency :</strong> {{frequency}} Hz
-                  <strong>Armed :</strong> {{armed}}
-                  <strong>Gains selec</strong> {{gains_control_mode}}
+                  <strong>Frequency :</strong> {{frequency}} Hz<br>
+                  <strong>Armed :</strong> {{armed}}<br>
+                  <strong>Gains selec</strong> {{gains_control_mode}}<br>
                 </div>
               </div>
             </article>
@@ -164,6 +164,11 @@
                   <h2 class="title is-4">Informations</h2>
                   <strong>Temp :</strong> {{temp}}<br>
                   <strong>pressure :</strong> {{pressure}}<br>
+
+                  <strong>Exp mode :</strong> {{experience_mode}}<br>
+                  <strong>Exp mode :</strong> {{experience_time}}<br>
+                  <strong>Filter mode :</strong> {{filter_mode}}<br>
+                  <strong>Filter param :</strong> {{filter_param}}<br>
                 </div>
               </div>
             </article>

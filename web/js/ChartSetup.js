@@ -41,19 +41,19 @@ vueApp.worker.addEventListener('message', function (e) {
         }
     }
     else {
-        vueApp.displayGains = e.data[1];
         vueApp.saving = e.data[0];
+        vueApp.displayGains = e.data[1];
+
+        vueApp.gps_fix = e.data[2];
+        vueApp.gps_get_fix = e.data[3];
+        vueApp.gps_latitude = e.data[4];
+        vueApp.gps_longitude = e.data[5];
+        vueApp.gps_height = e.data[6];
+        vueApp.gps_h_accuracy = e.data[7];
+        vueApp.gps_v_accuracy = e.data[8];
 
         vueApp.pressure = e.data[9];
         vueApp.temp = e.data[10];
-
-        vueApp.gps_fix = e.data[2];
-        vueApp.gps_latitude = e.data[4];
-        vueApp.gps_longitude = e.data[5];
-        
-        vueApp.armed = e.data[12];
-        vueApp.gains_control_mode = e.data[13];
-        
 
         var imode = parseInt(e.data[11]); // stab mode
         if (imode == 0) {
@@ -77,6 +77,16 @@ vueApp.worker.addEventListener('message', function (e) {
         else if (imode == 6) {
             vueApp.mode = "Unknown";
         }
+        
+        vueApp.armed = e.data[12];
+        vueApp.gains_control_mode = e.data[13];
+        
+        vueApp.experience_mode = e.data[14];
+        vueApp.experience_time = e.data[15];
+
+        vueApp.filter_mode = e.data[16];
+        vueApp.filter_param = e.data[17];
+
     }
 
     var now = new Date();

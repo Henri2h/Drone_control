@@ -1,7 +1,6 @@
 var vueApp = new Vue({
   el: '#vue-data',
   data: {
-    message: 'Hello Vue !',
     accel_x: '0.00',
     accel_y: '0.00',
     accel_z: '0.00',
@@ -18,12 +17,20 @@ var vueApp = new Vue({
     gains: [0, 0, 0, 0, 0, 0, 0, 0, 0],
 
     gps_fix: '',
+    gps_get_fix: '',
     gps_latitude: '',
     gps_longitude: '',
-    gps_latitude_precision: '',
-    gps_longitude_precision: '',
+    gps_height:'',
+    gps_h_accuracy: '',
+    gps_v_accuracy: '',
+
     armed:false,
     gains_control_mode:0,
+
+    experience_mode:'',
+    experience_time:'',
+    filter_mode:'',
+    filter_param:'',
 
     host: localStorage.websocket_url,
     frequency: '0',
