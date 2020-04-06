@@ -41,6 +41,7 @@ vueApp.worker.addEventListener('message', function (e) {
         }
     }
     else {
+        e.data.shift(); // shift data
         vueApp.saving = e.data[0];
         vueApp.displayGains = e.data[1];
 
