@@ -242,7 +242,7 @@ int *Stabilisation::Stabilize(Data &data, float dt)
             float kp = data.controller_gains[gains_rates_pitch_kp];
             data.pid_debug[0] = kp;
             rate_c.update_pid(kp, 0, 0);
-            rate_c.update(cmd, data.rates, dt, data.pid_debug);
+            rate_c.update(cmd, data.rates, dt);
 
             data.isArmed = true;
             // rates
