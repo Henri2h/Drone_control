@@ -66,6 +66,7 @@
     </div>
   </section>
 
+
   <section class="section">
     <h2 class="title">Plots :</h2>
 
@@ -84,6 +85,16 @@
   </div>
 
   <div id="vue-data">
+<section class="section">
+  <div class="control">
+    <select class="select" v-model="selected">
+      <option v-for="option in options" v-bind:value="option.value">
+        {{ option.text }}
+      </option>
+    </select>
+  </div>
+</section>
+  
 
     <section class="section">
       <h2 class="title">Data :</h2>

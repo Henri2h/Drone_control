@@ -48,8 +48,13 @@ vueApp.worker.addEventListener('message', function (e) {
 		16 : pid yaw
 
         */
-
-        Accel.push([parseFloat(e.data[8]), parseFloat(e.data[9]), parseFloat(e.data[10])]);
+       
+        if (vueApp.selected == "accel")
+            Accel.push([parseFloat(e.data[8]), parseFloat(e.data[9]), parseFloat(e.data[10])]);
+        else if (vueApp.selected == "gyr")
+            Accel.push([parseFloat(e.data[5]), parseFloat(e.data[6]), parseFloat(e.data[7])]);
+        else //angle
+            Accel.push([parseFloat(e.data[11]), parseFloat(e.data[12]), parseFloat(e.data[13])]);
 
         vueApp.gyr_x = parseFloat(e.data[5]).toPrecision(4);
         vueApp.gyr_y = parseFloat(e.data[6]).toPrecision(4);
@@ -58,7 +63,7 @@ vueApp.worker.addEventListener('message', function (e) {
         vueApp.accel_x = parseFloat(e.data[8]).toPrecision(4);
         vueApp.accel_y = parseFloat(e.data[9]).toPrecision(4);
         vueApp.accel_z = parseFloat(e.data[10]).toPrecision(4);
-        
+
         vueApp.comp_x = parseFloat(e.data[11]).toPrecision(4);
         vueApp.comp_y = parseFloat(e.data[12]).toPrecision(4);
         vueApp.comp_z = parseFloat(e.data[13]).toPrecision(4);
@@ -107,10 +112,10 @@ vueApp.worker.addEventListener('message', function (e) {
         else if (imode == 6) {
             vueApp.mode = "Unknown";
         }
-        
+
         vueApp.armed = e.data[12];
         vueApp.gains_control_mode = e.data[13];
-        
+
         vueApp.experience_mode = e.data[14];
         vueApp.experience_time = e.data[15];
 

@@ -43,7 +43,13 @@ var vueApp = new Vue({
     worker: new Worker('js/Worker_Client.js'),
     timeout: null,
     couldUpdateGains: true,
-    version:"beta_1.0.2"
+    version:"beta_1.0.2",
+    selected: 'accel',
+    options: [
+      { text: 'Acceleration', value: 'accel' },
+      { text: 'Gyration', value: 'gyr' },
+      { text: 'Angles', value: 'ang' }
+    ]
 
   },
   methods: {
