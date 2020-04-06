@@ -54,10 +54,10 @@ var vueApp = new Vue({
       else { console.log("Invalid length"); }
     }
   },
-  preventTyping(){
+  preventTyping: function(){
     this.couldUpdateGains = true;
   },
-  allowTyping(){
+  allowTyping: function(){
     this.couldUpdateGains = false;
   },
   inputKeyUp: function() {
