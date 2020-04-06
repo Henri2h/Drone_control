@@ -75,7 +75,7 @@ function getStatus() {
     Data = ["Status"];
     setReadStatusFalse();
     socket.send("#Status");
-    toRead = 20 + 1;
+    toRead = 18 + 1;
 }
 
 

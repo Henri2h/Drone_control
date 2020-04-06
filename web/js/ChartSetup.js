@@ -44,14 +44,18 @@ vueApp.worker.addEventListener('message', function (e) {
         vueApp.displayGains = e.data[1];
         vueApp.saving = e.data[0];
 
-        vueApp.pressure = e.data[10];
-        vueApp.temp = e.data[11];
+        vueApp.pressure = e.data[9];
+        vueApp.temp = e.data[10];
 
         vueApp.gps_fix = e.data[2];
-        vueApp.gps_latitude = e.data[3];
-        vueApp.gps_longitude = e.data[4];
+        vueApp.gps_latitude = e.data[4];
+        vueApp.gps_longitude = e.data[5];
+        
+        vueApp.armed = e.data[12];
+        vueApp.gains_control_mode = e.data[13];
+        
 
-        var imode = parseInt(e.data[12]);
+        var imode = parseInt(e.data[11]); // stab mode
         if (imode == 0) {
             vueApp.mode = "Rates mode";
         }

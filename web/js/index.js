@@ -15,10 +15,6 @@ var vueApp = new Vue({
     temp: '25.0',
     pressure: '1000',
 
-    ki: 'i',
-    kd: 'd',
-    kp: 'p',
-
     gains: [0, 0, 0, 0, 0, 0, 0, 0, 0],
 
     gps_fix: '',
@@ -26,6 +22,9 @@ var vueApp = new Vue({
     gps_longitude: '',
     gps_latitude_precision: '',
     gps_longitude_precision: '',
+    armed:false,
+    gains_control_mode:0,
+
     host: localStorage.websocket_url,
     frequency: '0',
     worker: new Worker('js/Worker_Client.js'),
