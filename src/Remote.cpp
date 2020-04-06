@@ -341,7 +341,7 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				}
 				else if (L_r[0].compare("#GetGainsRate") == 0)
 				{
-					sendFloatArray(ws, data, time_pointer, gains_length, opCode);
+					sendFloatArray(ws, data->controller_gains, time_pointer, gains_length, opCode);
 				}
 
 				else
