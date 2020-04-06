@@ -101,7 +101,7 @@ void GPS::update()
 		if (status[status_gps_get_fix] != pos_data[1])
 		{
 			status[status_gps_get_fix] = pos_data[1]; // getFixOk
-			printf("gpsFixOk: %d\n", (int)pos_data[1]);
+			printf("[ GPS ] : gpsFixOk: %d\n", (int)pos_data[1]);
 		}
 		/*
 			printf("gps Fix status: ");
