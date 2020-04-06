@@ -20,7 +20,7 @@ var vueApp = new Vue({
     temp: '25.0',
     pressure: '1000',
 
-    gains: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    gains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 
     gps_fix: '',
     gps_get_fix: '',
@@ -42,7 +42,8 @@ var vueApp = new Vue({
     frequency: '0',
     worker: new Worker('js/Worker_Client.js'),
     timeout: null,
-    couldUpdateGains: true
+    couldUpdateGains: true,
+    version:"beta_1.0.2"
 
   },
   methods: {

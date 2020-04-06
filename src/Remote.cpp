@@ -337,9 +337,15 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				{
 					int index = std::stoi(L_r[1]);
 					// set values
+					if(index < gains_control_mode_length){
 					data->controller_gains[index] = std::stof(L_r[2]);
 					cout << "Set gains : " << index << " : " << data->controller_gains[index] << "\n";
 					ws->send("OK", 2, opCode);
+					}
+					else{
+						cout << "[ Remote ] : gived an index out of array range";
+						ws->send("KO",2,opCode);
+					}
 				}
 
 				else

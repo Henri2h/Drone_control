@@ -83,7 +83,7 @@ function getGains() {
     Data = ["Gains"];
     setReadStatusFalse();
     socket.send("#GetGainsRate");
-    toRead = 9 + 1;
+    toRead = 9*2 + 1;
 }
 
 function setGains(pos, value) {

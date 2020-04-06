@@ -69,38 +69,18 @@ void Stabilisation::getValuesExperiments(Data &data, float dt)
 
 void Stabilisation::getValuesStabRates(Data &data, float dt)
 {
-    // map kd
-    int pos = data.status[status_gains_control_mode];
-    if (pos > 0)
-    {
-        pos--; // pos = 0 means, we don't read the values
-        data.controller_gains[pos*3] = utils::mapValue(data.commands[cmd_kp], 922, 2077, 0, 1);
-        data.controller_gains[pos*3+1] = utils::mapValue(data.commands[cmd_kd], 922, 2077, 0, 1);
-        data.controller_gains[pos*3+2] = utils::mapValue(data.commands[cmd_ki], 921, 2077, 0, 1);
-    }
 
     rate_c.update_pid(data.controller_gains);
-    rate_c.update(cmd, data.rates, dt, data.pid_debug);
+    rate_c.update(cmd, data.rates, dt);
 }
 
 void Stabilisation::getValuesStabAttitude(Data &data, float dt)
 {
-    data.entree[pid_pitch] = cmd[pid_pitch];
-    data.entree[pid_roll] = cmd[pid_roll];
+    attitude_c.update_pid(data.controller_gains); // update gains
+    rate_c.update_pid(data.controller_gains);
 
-    // fix values
-    float kp_atti = utils::mapValue(data.commands[cmd_kd], 922, 2077, 0, pid_gains_attitude_max);
-    float kp_rate = utils::mapValue(data.commands[cmd_kp], 922, 2077, 0, pid_gains_rate_max);
-    float kd_rate = utils::mapValue(data.commands[cmd_ki], 921, 2077, 0, 2);
-
-    if (i % 600 == 0 && showGains)
-    {
-        i = 0;
-        std::cout << "kp_atti : " << kp_atti << " kp_rate : " << kp_rate << " kd_rate : " << kd_rate << "\n";
-    }
-
-    attitude_c.update_pid(kp_atti, kp_rate, kd_rate); // update gains
     attitude_c.update(data, cmd, dt);
+    rate_c.update(cmd, data.rates, dt);
 }
 
 /// Change stabilisation depending on remote commands
@@ -109,10 +89,12 @@ void Stabilisation::getStabilisationMode(Data &data)
     int value = data.commands[cmd_selection];
     if (value > 1500 && selectionSliderWasOnBefore == false)
     {
-        if(data.status[status_gains_control_mode] < 3){
+        if (data.status[status_gains_control_mode] < gains_control_mode_length - 1)
+        {
             data.status[status_gains_control_mode]++;
         }
-        else data.status[status_gains_control_mode] = 0;
+        else
+            data.status[status_gains_control_mode] = 0;
         selectionSliderWasOnBefore = true;
         std::cout << "[ status_gains_control_mode ]: " << data.status[status_gains_control_mode] << "\n";
     }
@@ -207,11 +189,22 @@ int *Stabilisation::Stabilize(Data &data, float dt)
             MAX = MAX_RATES;
         }
 
-        int cmd_raw[3] = {data.commands[cmd_pitch], data.commands[cmd_roll], 2000 - data.commands[cmd_yaw]};
+        //feed commands
+        int cmd_raw[3] = {data.commands[cmd_pitch], data.commands[cmd_roll], data.commands[cmd_yaw]};
 
         cmd[pid_pitch] = utils::mapValue(cmd_raw[pid_pitch], 1075, 1920, -MAX, MAX);
         cmd[pid_roll] = utils::mapValue(cmd_raw[pid_roll], 1075, 1920, -MAX, MAX);
-        cmd[pid_yaw] = utils::mapValue(cmd_raw[pid_yaw], 1075, 1920, -MAX_YAW_SPEED, MAX_YAW_SPEED);
+        cmd[pid_yaw] = -utils::mapValue(cmd_raw[pid_yaw], 1070, 1920, -MAX_YAW_SPEED, MAX_YAW_SPEED);
+
+        // map gains in necessary
+        int pos = data.status[status_gains_control_mode];
+        if (pos > 0)
+        {
+            pos--; // pos = 0 means, we don't read the values
+            data.controller_gains[pos * 3] = utils::mapValue(data.commands[cmd_kp], 922, 2077, 0, 2);
+            data.controller_gains[pos * 3 + 1] = utils::mapValue(data.commands[cmd_kd], 922, 2077, 0, 2);
+            data.controller_gains[pos * 3 + 2] = utils::mapValue(data.commands[cmd_ki], 921, 2077, 0, 8);
+        }
 
         // compute commands
         // update orders

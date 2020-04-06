@@ -76,6 +76,13 @@
 #define status_armed 12
 #define status_gains_control_mode 13
 
+#define gains_control_mode_length 7 // should be gains_length * 2 + 1
+/*
+0 : nothing
+1 -> 3 : Rates
+4 -> 6 : Attitude
+*/
+
 #define status_experience_mode 14
 #define status_experience_time 15
 #define status_filter_mode 16
