@@ -30,22 +30,35 @@ void Remote::sendData(WebSocket<SERVER> *ws, int *values, float *time_pointer, O
 	ws->send(time_str, strlen(time_str), opCode);
 }
 
-void Remote::sendDataL(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, int length, OpCode opCode)
+void Remote::sendDataL(WebSocket<SERVER> *ws, Data *data, float *time_pointer, int length, OpCode opCode)
 {
 	// preparing results :
 	char const *time_str = to_string(*time_pointer).c_str();
 	for (size_t i = 0; i < length; i++)
 	{
-		char charray[14]; // warning : max 14 characters !!!!!
-		//cout << "i : " << i << " : " << dt->status[i] << " ";
-		char const *val = to_string(dt->status[i]).c_str();
+		//cout << "i : " << i << " : " << data->status[i] << " ";
+		char const *val = to_string(data->status[i]).c_str();
 		// sending data
 		ws->send(val, strlen(val), opCode);
 	}
 	ws->send(time_str, strlen(time_str), opCode);
 }
 
-void Remote::sendFStatus(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, OpCode opCode)
+void Remote::sendFloatArray(WebSocket<SERVER> *ws, float *values, float *time_pointer, int length, OpCode opCode)
+{
+	// preparing results :
+	char const *time_str = to_string(*time_pointer).c_str();
+	for (size_t i = 0; i < length; i++)
+	{
+		//cout << "i : " << i << " : " << data->status[i] << " ";
+		char const *val = to_string(values[i]).c_str();
+		// sending data
+		ws->send(val, strlen(val), opCode);
+	}
+	ws->send(time_str, strlen(time_str), opCode);
+}
+
+void Remote::sendFStatus(WebSocket<SERVER> *ws, Data *data, float *time_pointer, OpCode opCode)
 {
 	/*
 		0 : time
@@ -71,30 +84,30 @@ void Remote::sendFStatus(WebSocket<SERVER> *ws, Data *dt, float *time_pointer, O
 	char const *time_str = to_string(*time_pointer).c_str();
 
 	// command
-	char const *commands_str_0 = to_string(dt->commands[0]).c_str();
-	char const *commands_str_1 = to_string(dt->commands[1]).c_str();
-	char const *commands_str_2 = to_string(dt->commands[2]).c_str();
-	char const *commands_str_3 = to_string(dt->commands[3]).c_str();
+	char const *commands_str_0 = to_string(data->commands[0]).c_str();
+	char const *commands_str_1 = to_string(data->commands[1]).c_str();
+	char const *commands_str_2 = to_string(data->commands[2]).c_str();
+	char const *commands_str_3 = to_string(data->commands[3]).c_str();
 
 	// gyr
-	char const *gyr_str_0 = to_string(dt->rates[0]).c_str();
-	char const *gyr_str_1 = to_string(dt->rates[1]).c_str();
-	char const *gyr_str_2 = to_string(dt->rates[2]).c_str();
+	char const *gyr_str_0 = to_string(data->rates[0]).c_str();
+	char const *gyr_str_1 = to_string(data->rates[1]).c_str();
+	char const *gyr_str_2 = to_string(data->rates[2]).c_str();
 
 	// gyr
-	char const *acc_str_0 = to_string(dt->acceleration[0]).c_str();
-	char const *acc_str_1 = to_string(dt->acceleration[1]).c_str();
-	char const *acc_str_2 = to_string(dt->acceleration[2]).c_str();
+	char const *acc_str_0 = to_string(data->acceleration[0]).c_str();
+	char const *acc_str_1 = to_string(data->acceleration[1]).c_str();
+	char const *acc_str_2 = to_string(data->acceleration[2]).c_str();
 
 	// gyr
-	char const *comp_str_0 = to_string(dt->ang[0]).c_str();
-	char const *comp_str_1 = to_string(dt->ang[1]).c_str();
-	char const *comp_str_2 = to_string(dt->ang[2]).c_str(); // comp ang
+	char const *comp_str_0 = to_string(data->ang[0]).c_str();
+	char const *comp_str_1 = to_string(data->ang[1]).c_str();
+	char const *comp_str_2 = to_string(data->ang[2]).c_str(); // comp ang
 
 	// pid
-	char const *pid_str_0 = to_string(dt->controller_gains[0]).c_str();
-	char const *pid_str_1 = to_string(dt->controller_gains[1]).c_str();
-	char const *pid_str_2 = to_string(dt->controller_gains[2]).c_str();
+	char const *pid_str_0 = to_string(data->controller_gains[0]).c_str();
+	char const *pid_str_1 = to_string(data->controller_gains[1]).c_str();
+	char const *pid_str_2 = to_string(data->controller_gains[2]).c_str();
 
 	// sending data
 	ws->send(time_str, strlen(time_str), opCode); // time
@@ -140,7 +153,7 @@ std::vector<std::string> Remote::split(const std::string &s, char delimiter)
 
 void Remote::start_remote(Data *data_i, float *time_now_in)
 {
-	static Data *dt = data_i;
+	static Data *data = data_i;
 	static float *time_pointer = time_now_in;
 
 	FileManagement::Log("REMOTE", "Started");
@@ -162,39 +175,39 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 			{
 				if (L_r[0].compare("#ExpAbort") == 0)
 				{
-					dt->status[status_experience_mode] = 0;
+					data->status[status_experience_mode] = 0;
 					FileManagement::Log("Remote", "Experience aborted");
-					dt->orders[0] = 0; // stop saving
+					data->orders[0] = 0; // stop saving
 					ws->send("OK", 2, opCode);
 				}
 				else if (L_r[0].compare("#ExpStart") == 0)
 				{
 					FileManagement::Log("Remote", "Experience started");
-					dt->status[status_experience_mode] = 1;
+					data->status[status_experience_mode] = 1;
 					ws->send("OK", 2, opCode);
 				}
 
 				else if (L_r[0].compare("#FStatus") == 0)
 				{
-					sendFStatus(ws, dt, time_pointer, opCode);
+					sendFStatus(ws, data, time_pointer, opCode);
 				}
 				else if (L_r[0].compare("#Status") == 0)
 				{
-					sendDataL(ws, dt, time_pointer, status_length, opCode);
+					sendDataL(ws, data, time_pointer, status_length, opCode);
 				}
 
 				else if (r.compare("#OrdRecordOn") == 0)
 				{
 					// nothing
 					std::cout << "OrdRecordOn\n";
-					dt->orders[0] = 1;
+					data->orders[0] = 1;
 					ws->send("OK", 2, opCode);
 				}
 				else if (r.compare("#OrdRecordOff") == 0)
 				{
 					// nothing
 					std::cout << "OrdRecordOff\n";
-					dt->orders[0] = 0;
+					data->orders[0] = 0;
 					ws->send("OK", 2, opCode);
 				}
 
@@ -202,13 +215,13 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				else if (r.compare("#OrdDKOn") == 0)
 				{
 					// nothing
-					dt->orders[1] = 1;
+					data->orders[1] = 1;
 					ws->send("OK", 2, opCode);
 				}
 				else if (r.compare("#OrdDKOff") == 0)
 				{
 					// nothing
-					dt->orders[orders_DisplayGains] = 0;
+					data->orders[orders_DisplayGains] = 0;
 					ws->send("OK", 2, opCode);
 				}
 
@@ -226,25 +239,25 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 
 				else if (r.compare("#AngComp") == 0)
 				{
-					sendData(ws, dt->ang, time_pointer, opCode);
+					sendData(ws, data->ang, time_pointer, opCode);
 				}
 
 				else if (r.compare("#PIDErrP") == 0)
 				{
-					sendData(ws, dt->pid_debug, time_pointer, opCode);
+					sendData(ws, data->pid_debug, time_pointer, opCode);
 				}
 				else if (r.compare("#PID") == 0)
 				{
-					sendData(ws, dt->pid_out, time_pointer, opCode);
+					sendData(ws, data->pid_out, time_pointer, opCode);
 				}
 
 				else if (r.compare("#Acc") == 0)
 				{
-					sendData(ws, dt->acceleration, time_pointer, opCode);
+					sendData(ws, data->acceleration, time_pointer, opCode);
 				}
 				else if (r.compare("#Gyr") == 0)
 				{
-					sendData(ws, dt->rates, time_pointer, opCode);
+					sendData(ws, data->rates, time_pointer, opCode);
 				}
 
 				else if (r.compare("#ListFiles") == 0)
@@ -266,29 +279,29 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				{ // set filter
 					if (L_r[1].compare("NONE") == 0)
 					{
-						dt->stabilisation_mode = IMU_Filter_usage_none;
-						dt->status[status_filter_mode] = IMU_Filter_usage_none;
+						data->stabilisation_mode = IMU_Filter_usage_none;
+						data->status[status_filter_mode] = IMU_Filter_usage_none;
 						FileManagement::Log("Remote", "Filter mode none");
 						ws->send("OK", 2, opCode);
 					}
 					else if (L_r[1].compare("ACC") == 0)
 					{
-						dt->stabilisation_mode = IMU_Filter_usage_acc;
-						dt->status[status_filter_mode] = IMU_Filter_usage_acc;
+						data->stabilisation_mode = IMU_Filter_usage_acc;
+						data->status[status_filter_mode] = IMU_Filter_usage_acc;
 						FileManagement::Log("Remote", "Filter mode acc");
 						ws->send("OK", 2, opCode);
 					}
 					else if (L_r[1].compare("GYR") == 0)
 					{
-						dt->stabilisation_mode = IMU_Filter_usage_gyr;
-						dt->status[status_filter_mode] = IMU_Filter_usage_gyr;
+						data->stabilisation_mode = IMU_Filter_usage_gyr;
+						data->status[status_filter_mode] = IMU_Filter_usage_gyr;
 						FileManagement::Log("Remote", "Filter mode gyr");
 						ws->send("OK", 2, opCode);
 					}
 					else if (L_r[1].compare("BOTH") == 0)
 					{
-						dt->stabilisation_mode = IMU_Filter_usage_both;
-						dt->status[status_filter_mode] = IMU_Filter_usage_both;
+						data->stabilisation_mode = IMU_Filter_usage_both;
+						data->status[status_filter_mode] = IMU_Filter_usage_both;
 						FileManagement::Log("Remote", "Filter both");
 						ws->send("OK", 2, opCode);
 					}
@@ -304,27 +317,33 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 					{
 						// nothing
 						std::cout << "OrdRecordOff\n";
-						dt->orders[0] = 0;
+						data->orders[0] = 0;
 						ws->send("OK", 2, opCode);
 					}
 					else if (L_r[1].compare("ON") == 0)
 					{
 						// nothing
 						std::cout << "OrdRecordOn\n";
-						dt->orders[0] = 1;
+						data->orders[0] = 1;
 						ws->send("OK", 2, opCode);
 					}
 				}
+
+				// gains
 				else if (L_r[0].compare("#SetGainsRate") == 0)
 				{
-
 					cout << L_r.size() << "arguments : 1: " << L_r[1] << " 2: " << L_r[2] << "\n";
 					int index = std::stoi(L_r[1]);
 					// set values
-					dt->controller_gains[index] = std::stof(L_r[1]);
-					cout << "Set gains : " << dt->controller_gains[index] << "\n";
+					data->controller_gains[index] = std::stof(L_r[1]);
+					cout << "Set gains : " << data->controller_gains[index] << "\n";
 					ws->send("OK", 2, opCode);
 				}
+				else if (L_r[0].compare("#GetGainsRate") == 0)
+				{
+					sendFloatArray(ws, data, time_pointer, gains_length, opCode);
+				}
+
 				else
 				{
 					FileManagement::Log("Remote", "command unknown : |" + L_r[0] + "|" + L_r[1] + "|");
