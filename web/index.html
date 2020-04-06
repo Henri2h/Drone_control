@@ -127,7 +127,7 @@
                 <div class="content">
                   <h2 class="title is-4">GPS</h2>
                   <strong>Fix</strong> {{gps_fix}}<br>
-                  <strong>Get fix</strong> {{gps_gett_fix}}<br>
+                  <strong>Get fix</strong> {{gps_get_fix}}<br>
                   <strong>Latitude</strong> {{gps_latitude}}<br>
                   <strong>Longitude</strong> {{gps_longitude}}<br>
                   <strong>Height</strong> {{gps_height}}<br>
@@ -233,8 +233,8 @@
       <h2 class="title">Set Gains :</h2>
 
       <section class="section">
-        <button class="button is-danger" v-on:click="preventTyping">Allow Typing</button>
-        <button class="button is-primary" v-on:click="allowTyping">Prevent Typing</button>
+        <button class="button is-danger" v-on:click="preventTyping">Prevent typing</button>
+        <button class="button is-primary" v-on:click="allowTyping">Allow typing</button>
       </section>
 
       <form class="field has-addons" @submit.prevent="setGains(0)">
@@ -260,7 +260,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[1]" placeholder="Gains">
+          <input class="input" type="text" v-model="gains[1]" placeholder="Gains" v-on:keyup.delete="inputKeyUp">
         </div>
         <div class="control">
           <button class="button is-info">
@@ -275,7 +275,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[2]" placeholder="Gains">
+          <input class="input" type="text" v-model="gains[2]" placeholder="Gains" v-on:keyup.delete="inputKeyUp">
         </div>
         <div class="control">
           <button class="button is-info">
@@ -290,7 +290,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[3]" placeholder="Gains">
+          <input class="input" type="text" v-model="gains[3]" placeholder="Gains" v-on:keyup.delete="inputKeyUp">
         </div>
         <div class="control">
           <button class="button is-info">
@@ -305,7 +305,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[4]" placeholder="Gains">
+          <input class="input" type="text" v-model="gains[4]" placeholder="Gains" v-on:keyup.delete="inputKeyUp" >
         </div>
         <div class="control">
           <button class="button is-info">
@@ -320,7 +320,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[5]" placeholder="Gains">
+          <input class="input" type="text" v-model="gains[5]" placeholder="Gains" v-on:keyup.delete="inputKeyUp">
         </div>
         <div class="control">
           <button class="button is-info">
@@ -335,7 +335,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[6]" placeholder="Gains">
+          <input class="input" type="text" v-model="gains[6]" placeholder="Gains" v-on:keyup.delete="inputKeyUp">
         </div>
         <div class="control">
           <button class="button is-info">
@@ -343,7 +343,7 @@
           </button>
         </div>
       </form>
-      <form class="field has-addons" @submit.prevent="setGains(7)">
+      <form class="field has-addons" @submit.prevent="setGains(7)" >
 
         <div class="control">
           <div class="button is-primary">
@@ -351,7 +351,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[7]" placeholder="Gains">
+          <input class="input" type="text" v-model="gains[7]" placeholder="Gains" v-on:keyup.delete="inputKeyUp">
         </div>
         <div class="control">
           <button class="button is-info">
@@ -366,7 +366,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[8]" placeholder="Gains">
+          <input class="input" type="text" v-model="gains[8]" placeholder="Gains" v-on:keyup.delete="inputKeyUp">
         </div>
         <div class="control">
           <button class="button is-info">
