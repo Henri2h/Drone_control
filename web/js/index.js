@@ -30,15 +30,16 @@ var vueApp = new Vue({
     frequency: '0',
     worker: new Worker('js/Worker_Client.js'),
     timeout: null,
-    couldUpdateGains:true
+    couldUpdateGains: true
 
   },
   methods: {
-    handleSubmit: function() {
+    handleSubmit: function () {
       // Send data to the server or update your stores and such.
       localStorage.websocket_url = this.host;
     },
-    setGains: function(pos) {
+    
+    setGains: function (pos) {
       console.log(pos);
       if (pos < this.gains.length) {
         var data = {
@@ -52,24 +53,27 @@ var vueApp = new Vue({
         this.worker.postMessage(JSON.stringify(data));
       }
       else { console.log("Invalid length"); }
-    }
-  },
-  preventTyping: function(){
-    this.couldUpdateGains = true;
-  },
-  allowTyping: function(){
-    this.couldUpdateGains = false;
-  },
-  inputKeyUp: function() {
-     // Clear the timeout if it has already been set.
-    // This will prevent the previous task from executing
-    // if it has been less than <MILLISECONDS>
-    clearTimeout(this.timeout);
-    this.couldUpdateGains = false;
+    },
 
-    // Make a new timeout set to go off in 1000ms (1 second)
-    this.timeout = setTimeout(function () {
+    preventTyping: function () {
+      this.couldUpdateGains = true;
+    },
+    
+    allowTyping: function () {
+      this.couldUpdateGains = false;
+    },
+
+    inputKeyUp: function () {
+      // Clear the timeout if it has already been set.
+      // This will prevent the previous task from executing
+      // if it has been less than <MILLISECONDS>
+      clearTimeout(this.timeout);
+      this.couldUpdateGains = false;
+
+      // Make a new timeout set to go off in 1000ms (1 second)
+      this.timeout = setTimeout(function () {
         this.couldUpdateGains = true;
-    }, 3000);
+      }, 3000);
+    }
   }
 })
