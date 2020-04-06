@@ -226,14 +226,14 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				}
 
 				// File Management :
-				else if (r.compare("#FL"))
+				else if (r.compare("#FL") == 0)
 				{ // FL : FileList
 					std::string strlist = FileManagement::listDir("/home/pi/log");
 					char const *data = strlist.c_str();
 					ws->send(data, strlen(data), opCode);
 				}
 
-				else if (r.compare("#FS"))
+				else if (r.compare("#FS") == 0)
 				{ // FL : FileSend
 				}
 
@@ -274,8 +274,7 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 					FileManagement::Log("Remote", "command unknown : |" + r + "|");
 					ws->send("KO", 2, opCode);
 				}
-				
-			}
+						}
 			else if (L_r.size() > 1)
 			{
 
