@@ -223,10 +223,12 @@
     </section>
 
     <section class="section">
-      <button class="button is-Danger" v-on:click="preventTyping">Allow Typing</button>
-      <button class="button is-Primary" v-on:click="allowTyping">Prevent Typing</button>
-
+     
       <h2 class="title">Set Gains :</h2>
+      
+      <button class="button is-danger" v-on:click="preventTyping">Allow Typing</button>
+      <button class="button is-primary" v-on:click="allowTyping">Prevent Typing</button>
+
       <form class="field has-addons" @submit.prevent="setGains(0)">
 
         <div class="control">
