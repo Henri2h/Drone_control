@@ -44,14 +44,14 @@ void Remote::sendDataL(WebSocket<SERVER> *ws, Data *data, float *time_pointer, i
 	ws->send(time_str, strlen(time_str), opCode);
 }
 
-void Remote::sendFloatArray(WebSocket<SERVER> *ws, float *values, float *time_pointer, int length, OpCode opCode)
+void Remote::sendGains(WebSocket<SERVER> *ws, Data *data, float *time_pointer, int length, OpCode opCode)
 {
 	// preparing results :
 	char const *time_str = to_string(*time_pointer).c_str();
 	for (size_t i = 0; i < length; i++)
 	{
 		//cout << "i : " << i << " : " << data->status[i] << " ";
-		char const *val = to_string(values[i]).c_str();
+		char const *val = to_string(data->controller_gains[i]).c_str();
 		// sending data
 		ws->send(val, strlen(val), opCode);
 	}
@@ -341,7 +341,7 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				}
 				else if (L_r[0].compare("#GetGainsRate") == 0)
 				{
-					sendFloatArray(ws, data->controller_gains, time_pointer, gains_length, opCode);
+					sendFloatArray(ws, data, time_pointer, gains_length, opCode);
 				}
 
 				else
