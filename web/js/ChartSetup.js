@@ -30,6 +30,10 @@ worker.addEventListener('message', function (e) {
         vueApp.accel_y = parseFloat(e.data[10]).toPrecision(4);
         vueApp.accel_z = parseFloat(e.data[11]).toPrecision(4);
     }
+    else if(e.data[0] == "Gains"){
+        e.data.shift();
+        vueApp.gains = e.data;
+    }
     else {
         vueApp.displayGains = e.data[1];
         vueApp.saving = e.data[0];

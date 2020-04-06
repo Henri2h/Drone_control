@@ -34,6 +34,9 @@ var vueApp = new Vue({
     handleSubmit() {
       // Send data to the server or update your stores and such.
       localStorage.websocket_url = this.host;
+    },
+    setGains(pos){
+      console.log(pos);
     }
   }
 })
