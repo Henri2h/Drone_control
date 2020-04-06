@@ -1,4 +1,4 @@
-let h = 200;//window.innerHeight;
+let h = 300;//window.innerHeight;
 let w = window.innerWidth;
 
 let time = 0;
@@ -76,6 +76,12 @@ legend
   .text(d => d[0])
   .attr('transform', (d, i) => `translate(10, ${i * 15 + 4})`);
 
+var maxs = [];
+var mins = [];
+
+var max_value;
+var min_value;
+
 function tick() {
 
   if (Accel.length > 0) {
@@ -83,7 +89,47 @@ function tick() {
     accel_x[time] = Accel[0][0];
     accel_y[time] = Accel[0][1];
     accel_z[time] = Accel[0][2];
+
+    var min_v = Math.min(accel_x[time], accel_y[time], accel_z[time]);
+    var max_v = Math.max(accel_x[time], accel_y[time], accel_z[time]);
+
     Accel.shift();
+
+
+    // set min and max
+    max_value = max_v;
+    min_value = -10;
+
+    // get maximum
+    var better = false;
+
+    var i = 0;
+    while (i < maxs.length) {
+      if (maxs[i].value > max_value)
+        max_value = maxs[i].value;
+      maxs[i].age++;
+      //console.log(i, maxs[i].value, max_v, max_value, maxs[i].age)
+      if (maxs[i].age > latestAccel_x.length || maxs[i].value < max_v) {
+        maxs.splice(i, 1);
+      }
+      else { i++; }
+    }
+    if (maxs.length < 5) { maxs.push({ value: max_v, age: 0 }); }
+
+
+    i = 0;
+    while (i < mins.length) {
+      if (mins[i].value < min_value)
+        min_value = mins[i].value;
+      mins[i].age++;
+      //console.log(i, maxs[i].value, max_v, max_value, maxs[i].age)
+      if (mins[i].age > latestAccel_x.length || mins[i].value > min_v) {
+        mins.splice(i, 1);
+      }
+      else { i++; }
+    }
+    if (mins.length < 5) { mins.push({ value: min_v, age: 0 }); }
+
 
     if (time <= num) {
       latestAccel_x = accel_x.slice(-num);
@@ -99,16 +145,21 @@ function tick() {
       latestAccel_y.push(accel_y[time]);
       latestAccel_z.push(accel_z[time]);
     }
+
+    if (Accel.length > 200) {
+      console.log("GRAPH : could not keep up. Resetting.");
+      Accel = [];
+    }
+
     return true;
   }
   return false;
 }
-
 function update() {
   x.domain([time - num, time]);
   let yDom = d3.extent(latestAccel_x);
-  yDom[0] = -15;//Math.max(yDom[0] - 1, 0);
-  yDom[1] = 15;
+  yDom[0] = min_value - 2;//Math.max(yDom[0] - 1, 0);
+  yDom[1] = max_value + 2
   y.domain(yDom);
 
   $xAxis
