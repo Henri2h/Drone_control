@@ -19,6 +19,8 @@ function connect(url) {
 
     socket.onmessage = function (event) {
         Data.push(event.data);
+        console.log("Pos :" + Data.length - 2 + " " + event.data); // remove firs item from count
+
         if (Data.length - 1 >= toRead) {
             self.postMessage(Data)
             setReadStatusTrue();
@@ -71,7 +73,7 @@ function getStatus() {
 }
 
 
-function getGains(){
+function getGains() {
     Data = ["Gains"];
     setReadStatusFalse();
     socket.send("#GetGainsRate");
@@ -90,7 +92,7 @@ function update() {
                 if (mode < 8) {
                     getFStatus();
                 }
-                else if(mode == 8){
+                else if (mode == 8) {
                     getStatus();
                 }
                 else {
