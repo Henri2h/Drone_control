@@ -98,7 +98,7 @@ function update() {
         if (commands.length > 0) {
             console.log(commands[0]);
             if (commands[0].command == "setGain") {
-                setGains(command[0].data.pos, command[0].data.value);
+                setGains(commands[0].data.pos, commands[0].data.value);
             }
             commands.shift();
         }
