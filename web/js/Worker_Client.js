@@ -1,7 +1,7 @@
 console.log("started");
 
 // web socket
-var exampleSocket; //= new WebSocket("ws://192.168.0.14:8766");
+var socket; //= new WebSocket("ws://192.168.0.14:8766");
 
 var connected = false;
 var loaded = false;
@@ -15,9 +15,9 @@ var iter = 1;
 var toRead = 0;
 
 function connect(url) {
-    exampleSocket = new WebSocket(url);
+    socket = new WebSocket(url);
 
-    exampleSocket.onmessage = function (event) {
+    socket.onmessage = function (event) {
         Data.push(event.data);
 
         if (Data.length - 1 >= toRead) {
@@ -28,11 +28,11 @@ function connect(url) {
         }
     }
 
-    exampleSocket.onerror = function (event) {
+    socket.onerror = function (event) {
         console.log("error : " + event.data);
     }
 
-    exampleSocket.onopen = function (event) {
+    socket.onopen = function (event) {
         loaded = true;
         console.log("Socket open, set read status true");
         setReadStatusTrue();
@@ -60,14 +60,14 @@ function setReadStatusFalse() {
 function getFStatus() {
     Data = ["FStatus"];
     setReadStatusFalse();
-    exampleSocket.send("#FStatus");
+    socket.send("#FStatus");
     toRead = 17;
 }
 
 function getStatus() {
     Data = ["Status"];
     setReadStatusFalse();
-    exampleSocket.send("#Status");
+    socket.send("#Status");
     toRead = 21;
 }
 
@@ -75,7 +75,7 @@ function getStatus() {
 function getGains(){
     Data = ["Gains"];
     setReadStatusFalse();
-    exampleSocket.send("#GetGainsRate");
+    socket.send("#GetGainsRate");
     toRead = 9;
 }
 
