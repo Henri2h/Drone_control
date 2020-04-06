@@ -223,6 +223,9 @@
     </section>
 
     <section class="section">
+      <button class="button is-Danger" v-on:click="preventTyping">Allow Typing</button>
+      <button class="button is-Primary" v-on:click="allowTyping">Prevent Typing</button>
+
       <h2 class="title">Set Gains :</h2>
       <form class="field has-addons" @submit.prevent="setGains(0)">
 
@@ -232,7 +235,7 @@
           </div>
         </div>
         <div class="control">
-          <input class="input" type="text" v-model="gains[0]" placeholder="Gains" v-on:keyup.delete="inputKeyUp">
+          <input class="input" type="text" v-model="gains[0]" placeholder="Gains">
         </div>
         <div class="control">
           <button class="button is-info">

@@ -54,6 +54,12 @@ var vueApp = new Vue({
       else { console.log("Invalid length"); }
     }
   },
+  preventTyping(){
+    this.couldUpdateGains = true;
+  },
+  allowTyping(){
+    this.couldUpdateGains = false;
+  },
   inputKeyUp: function() {
      // Clear the timeout if it has already been set.
     // This will prevent the previous task from executing
