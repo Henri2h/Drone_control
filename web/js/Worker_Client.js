@@ -20,9 +20,11 @@ function connect(url) {
     exampleSocket.onmessage = function (event) {
         Data.push(event.data);
 
-        if (Data.length >= toRead) {
+        if (Data.length - 1 >= toRead) {
             self.postMessage(Data)
             setReadStatusTrue();
+
+            console.log("Done");
         }
     }
 
@@ -59,14 +61,14 @@ function getFStatus() {
     Data = ["FStatus"];
     setReadStatusFalse();
     exampleSocket.send("#FStatus");
-    toRead = 18;
+    toRead = 17;
 }
 
 function getStatus() {
     Data = ["Status"];
     setReadStatusFalse();
     exampleSocket.send("#Status");
-    toRead = 22;
+    toRead = 21;
 }
 
 
