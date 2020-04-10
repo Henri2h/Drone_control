@@ -45,8 +45,8 @@ class IMU
     const int y = 1;
     const int z = 2;
 
-    const float kAcc = 0.02;
-    const float kGyr = 0.98;
+    const float kAcc = 0.05;
+    const float kGyr = 0.95;
 
     const float g = 9.81;
 
@@ -54,7 +54,7 @@ class IMU
 
     float accel_old[3] = {0, 0, 0};
     float rates_old[3] = {0, 0, 0};
-    float w0Te = 1;
+    float w0Te = 100;
     int filterUsage = IMU_Filter_usage_both; // default value
     /*
     0 : no
@@ -75,7 +75,7 @@ public:
 
     void setDt(float dt_in);
     void setMode(Data &data);
-
+    
     void getAngleAccel(Data &data);
     void getAcceleration(Data &data);
     void getRates(Data &data);         // rates

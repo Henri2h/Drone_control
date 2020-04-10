@@ -81,7 +81,10 @@ IMU::IMU()
 
 void IMU::setMode(Data &data)
 {
+    
+    //data.status[status_filter_mode] = IMU_Filter_usage_gyr;
     filterUsage = data.status[status_filter_mode];
+    
 }
 
 void IMU::update()
@@ -90,7 +93,7 @@ void IMU::update()
     sensor->read_accelerometer(&imu_values[0], &imu_values[1], &imu_values[2]);
     sensor->read_gyroscope(&imu_values[3], &imu_values[4], &imu_values[5]);
     sensor->read_magnetometer(&imu_values[6], &imu_values[7], &imu_values[8]);
-
+    
     /*
             IMU offsets and filter
         */
@@ -122,33 +125,33 @@ void IMU::getAngleAccel(Data &data)
 
     if (imu_values[z] != 0)
     {
-        data.ang[x] = atan(imu_values[x] / imu_values[z]) * 180 / PI;
-        data.ang[y] = atan(imu_values[y] / imu_values[z]) * 180 / PI; // convert in degrees
+        data.ang_acc[x] = atan(imu_values[x] / imu_values[z]) * 180 / PI;
+        data.ang_acc[y] = atan(imu_values[y] / imu_values[z]) * 180 / PI; // convert in degrees
     }
     else
     { // it really mean that we cannot determine angles this way
-        data.ang[x] = 0;
-        data.ang[y] = 0;
+        data.ang_acc[x] = 0;
+        data.ang_acc[y] = 0;
     }
 
     // non trivial rules
 
     if (imu_values[z] <= 0 && imu_values[y] <= 0)
     {
-        data.ang[x] -= 180;
+        data.ang_acc[x] -= 180;
     }
     else if (imu_values[z] <= 0 && imu_values[y] > 0)
     {
-        data.ang[x] += 180;
+        data.ang_acc[x] += 180;
     }
 
     if (imu_values[z] <= 0 && imu_values[x] <= 0)
     {
-        data.ang[y] -= 180;
+        data.ang_acc[y] -= 180;
     }
     else if (imu_values[z] <= 0 && imu_values[x] > 0)
     {
-        data.ang[y] += 180;
+        data.ang_acc[y] += 180;
     }
 }
 
