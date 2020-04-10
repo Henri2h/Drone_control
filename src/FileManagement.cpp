@@ -120,10 +120,11 @@ void FileManagement::saveDataSettings(Data &data)
 void FileManagement::readDataSettings(Data &data)
 {
     ifstream file;
-    if (file)
-    {
+    
+    file.open("settings.json");
+    
+    if(file.is_open()){
         json j;
-        file.open("settings.json");
         file >> j;
         file.close();
         for (int i = 0; i < gains_length; i++)
