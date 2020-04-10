@@ -99,18 +99,23 @@ void FileManagement::saveData(Data &data, float t)
 
 void FileManagement::saveDataSettings(Data &data)
 {
-    FileManagement::Log("File", "going to save");
     json j;
     for (int i = 0; i < gains_length; i++)
     {
         j["gains_" + std::to_string(i)] = data.controller_gains[i];
     }
 
+    j["filter"] = data.status[status_filter_mode];
+
+    // parameters
+    j["IMU_filter_mode"] = data.parameters[params_IMU_Filter_mode];
+    j["IMU_filter_value"] = data.parameters[params_IMU_Filter_value];
+
     ofstream file;
     file.open("settings.json", std::ofstream::trunc);
     file << j.dump();
     file.close();
-    FileManagement::Log("File", "saved");
+    FileManagement::Log("File", "Settings saved to settings.json");
 }
 void FileManagement::readDataSettings(Data &data)
 {
@@ -125,5 +130,13 @@ void FileManagement::readDataSettings(Data &data)
         {
             data.controller_gains[i] = j["gains_" + std::to_string(i)].get<float>();
         }
+
+        data.status[status_filter_mode] = j["filter"].get<float>();
+
+        // parameters
+        data.parameters[params_IMU_Filter_mode] = j["IMU_filter_mode"].get<float>();
+        data.parameters[params_IMU_Filter_value] = j["IMU_filter_value"].get<float>();
+
+        FileManagement::Log("File", "Data loaded from settings.json");
     }
 }
