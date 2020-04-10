@@ -313,6 +313,8 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 						FileManagement::Log("Remote", "setFilter : parameter unknown : |" + L_r[0] + "|" + L_r[1] + "|");
 						ws->send("KO", 2, opCode);
 					}
+					
+					FileManagement::saveDataSettings(*data);
 				}
 				else if (L_r[0].compare("#OrdRecord") == 0)
 				{
@@ -331,6 +333,18 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 						ws->send("OK", 2, opCode);
 					}
 				}
+				else if (L_r[0].compare("#SetFilterMode") == 0)
+				{
+					int index = std::stoi(L_r[1]);
+					// set values
+					data->parameters[params_IMU_Filter_mode] = std::stof(L_r[2]);
+					FileManagement::Log("Remote", "Set filer mode " + std::to_string(data->parameters[params_IMU_Filter_mode]) + " ");
+					
+					// save gains
+					FileManagement::saveDataSettings(*data);
+					
+					ws->send("OK", 2, opCode);
+				}
 
 				// gains
 				else if (L_r[0].compare("#SetGainsRate") == 0)
@@ -339,8 +353,8 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 					// set values
 					if(index < gains_length){
 					data->controller_gains[index] = std::stof(L_r[2]);
-					cout << "Set gains : " << index << " : " << data->controller_gains[index] << "\n";
 					
+					FileManagement::Log("Remote", "Set gains " + std::to_string(data->controller_gains[index]) + " ");
 					// save gains
 					FileManagement::saveDataSettings(*data);
 					
