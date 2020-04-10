@@ -17,3 +17,5 @@ remote/uws
 src/log
 src/Drone
 /.vs
+settings.json
+Drone

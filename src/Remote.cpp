@@ -340,6 +340,10 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 					if(index < gains_length){
 					data->controller_gains[index] = std::stof(L_r[2]);
 					cout << "Set gains : " << index << " : " << data->controller_gains[index] << "\n";
+					
+					// save gains
+					FileManagement::saveDataSettings(*data);
+					
 					ws->send("OK", 2, opCode);
 					}
 					else{

@@ -13,9 +13,15 @@
 #include <fstream>
 #include <ctime>
 #include <unistd.h>
+#include <string>
 
 #include "Ref.h"
 #include "Data.h"
+
+#include <json.hpp>
+
+// for convenience
+using json = nlohmann::json;
 
 using namespace std;
 class FileManagement
@@ -32,6 +38,8 @@ class FileManagement
     static std::string listDir(const char *list);
     static string* readFile(string fileName);
     static void saveData(Data &data, float t);
+    static void saveDataSettings(Data &data);
+    static void readDataSettings(Data &data);
 };
 
 #endif

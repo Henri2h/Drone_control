@@ -46,6 +46,9 @@ void safety()
 				led->setArming();
 
 				data.status[status_armed] = 1;
+
+				// going to level the drone
+				imu->computeOffsets();
 			}
 			else if (data.isArming && t_diff * pow(10, -9) > 2 && data.isArmed == false)
 			{
@@ -60,7 +63,9 @@ void safety()
 			data.isArmed = false;
 			data.isArming = false;
 			led->backToPrevious();
-
+			if(data.status[status_armed] != 0){
+				FileManagement::Log("Safety", "Disarmed");
+			}
 			data.status[status_armed] = 0;
 		}
 	}
@@ -86,6 +91,9 @@ void setup()
 		FileManagement::Log("Main", "APM is running ... could not run");
 		throw "APM running";
 	}
+
+	// load data from json
+	FileManagement::readDataSettings(data);
 
 	led = std::make_shared<LEDManager>();
 	led->setKO();

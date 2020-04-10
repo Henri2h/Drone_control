@@ -25,7 +25,7 @@ DEPS = $(OBJECTS:.o=.d)
 
 # flags #
 COMPILE_FLAGS = -std=c++11 -Wall -Wextra -g
-INCLUDES = -I includes/Navio -I /usr/local/include
+INCLUDES = -I includes/Navio -I includes/nlohmann -I /usr/local/include
 
 NAVIO_PATH = includes/Navio
 

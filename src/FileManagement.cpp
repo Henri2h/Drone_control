@@ -5,7 +5,6 @@ bool FileManagement::isFileOpen = false;
 char FileManagement::file_log_name[FILE_LOG_NAME_SIZE];
 ofstream FileManagement::myfile;
 
-
 void FileManagement::initialize()
 {
     isFileOpen = false;
@@ -19,7 +18,7 @@ void FileManagement::Log(string base, string text)
     save_file << "[ " << base << " ] : " << text << "\n";
     std::cout << "[ " << base << " ] : " << text << "\n";
     save_file.close();
-}   
+}
 
 std::string FileManagement::listDir(const char *list)
 {
@@ -42,10 +41,11 @@ std::string FileManagement::listDir(const char *list)
     return ss.str();
 }
 
-string* FileManagement::readFile(string fileName){
-    
-    string colour[4] = { fileName, "Red", 
-                         "Orange", "Yellow" }; 
+string *FileManagement::readFile(string fileName)
+{
+
+    string colour[4] = {fileName, "Red",
+                        "Orange", "Yellow"};
     return colour;
 }
 
@@ -74,7 +74,8 @@ void FileManagement::saveData(Data &data, float t)
 
     if (data.status[status_Saving] == 1)
     {
-        if(data.status[status_experience_mode] == 2){
+        if (data.status[status_experience_mode] == 2)
+        {
             t = data.time_exp; // we are doing an experiment so use this time
         }
         // save data in a csv format
@@ -93,5 +94,36 @@ void FileManagement::saveData(Data &data, float t)
         std::cout << "[ FileSaving ] : file saving ended\n";
         FileManagement::isFileOpen = false;
         FileManagement::myfile.close();
+    }
+}
+
+void FileManagement::saveDataSettings(Data &data)
+{
+    FileManagement::Log("File", "going to save");
+    json j;
+    for (int i = 0; i < gains_length; i++)
+    {
+        j["gains_" + std::to_string(i)] = data.controller_gains[i];
+    }
+
+    ofstream file;
+    file.open("settings.json", std::ofstream::trunc);
+    file << j.dump();
+    file.close();
+    FileManagement::Log("File", "saved");
+}
+void FileManagement::readDataSettings(Data &data)
+{
+    ifstream file;
+    if (file)
+    {
+        json j;
+        file.open("settings.json");
+        file >> j;
+        file.close();
+        for (int i = 0; i < gains_length; i++)
+        {
+            data.controller_gains[i] = j["gains_" + std::to_string(i)].get<float>();
+        }
     }
 }
