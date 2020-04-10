@@ -128,3 +128,10 @@
 #define exp_time_cmd_stop 7.5
 #define exp_time_motor_stop 7.5
 #define exp_time_end 10
+
+
+// FUTURE : 
+// parameters
+#define params_length 2
+#define params_IMU_Filter_mode 0
+#define params_IMU_Filter_value 1

@@ -41,12 +41,13 @@ public:
     bool isArming = false;
     int stabilisation_mode = 0; // rates = 0, angle = 1
                                 //float cmd[3] = {0, 0, 0};   // command mapped
-
+    
     // saving
     float controller_gains[gains_length];
 
     int orders[10];
     double status[status_length];
+    float parameters[params_length];
 
     // adding a status save system : ease dvpt
     int f_display_iterationscount = 6000;
