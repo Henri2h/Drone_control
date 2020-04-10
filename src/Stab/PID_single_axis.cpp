@@ -53,7 +53,9 @@ float PID_Single_Axis::update(float command, float feedback, float dt)
     error_d = (error_p - error_p_last) / dt;
     error_i += error_p * dt;
 
-    //integralWindup();  // integral windup of i term
+    //cout << error_i << "\n";
+
+    integralWindup();  // integral windup of i term
     //  doFilter(); // filter in derrivative term
 
     error_p_last = error_p;
