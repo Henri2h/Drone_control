@@ -274,7 +274,7 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 					FileManagement::Log("Remote", "command unknown : |" + r + "|");
 					ws->send("KO", 2, opCode);
 				}
-						}
+			}
 			else if (L_r.size() > 1)
 			{
 
@@ -313,7 +313,7 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 						FileManagement::Log("Remote", "setFilter : parameter unknown : |" + L_r[0] + "|" + L_r[1] + "|");
 						ws->send("KO", 2, opCode);
 					}
-					
+
 					FileManagement::saveDataSettings(*data);
 				}
 				else if (L_r[0].compare("#OrdRecord") == 0)
@@ -339,10 +339,22 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 					// set values
 					data->parameters[params_IMU_Filter_mode] = std::stof(L_r[2]);
 					FileManagement::Log("Remote", "Set filer mode " + std::to_string(data->parameters[params_IMU_Filter_mode]) + " ");
-					
+
 					// save gains
 					FileManagement::saveDataSettings(*data);
-					
+
+					ws->send("OK", 2, opCode);
+				}
+				else if (L_r[0].compare("#SetFilterValue") == 0)
+				{
+					int index = std::stoi(L_r[1]);
+					// set values
+					data->parameters[params_IMU_Filter_value] = std::stof(L_r[2]);
+					FileManagement::Log("Remote", "Set filer value " + std::to_string(data->parameters[params_IMU_Filter_value]) + " ");
+
+					// save gains
+					FileManagement::saveDataSettings(*data);
+
 					ws->send("OK", 2, opCode);
 				}
 
@@ -351,18 +363,20 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				{
 					int index = std::stoi(L_r[1]);
 					// set values
-					if(index < gains_length){
-					data->controller_gains[index] = std::stof(L_r[2]);
-					
-					FileManagement::Log("Remote", "Set gains " + std::to_string(data->controller_gains[index]) + " ");
-					// save gains
-					FileManagement::saveDataSettings(*data);
-					
-					ws->send("OK", 2, opCode);
+					if (index < gains_length)
+					{
+						data->controller_gains[index] = std::stof(L_r[2]);
+
+						FileManagement::Log("Remote", "Set gains " + std::to_string(data->controller_gains[index]) + " ");
+						// save gains
+						FileManagement::saveDataSettings(*data);
+
+						ws->send("OK", 2, opCode);
 					}
-					else{
+					else
+					{
 						cout << "[ Remote ] : gived an index out of array range";
-						ws->send("KO",2,opCode);
+						ws->send("KO", 2, opCode);
 					}
 				}
 
