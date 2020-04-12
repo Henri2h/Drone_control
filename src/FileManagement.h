@@ -7,6 +7,8 @@
 #define FILE_LOG_NAME_SIZE 50
 #define FILE_SAVE_NAME_SIZE 50
 
+#define FILE_PATH_SETTINGS "/home/pi/data/settings.json"
+
 #include <dirent.h>
 #include <sstream>
 #include <iostream>
