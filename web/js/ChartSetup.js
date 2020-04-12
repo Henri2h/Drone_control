@@ -119,8 +119,12 @@ vueApp.worker.addEventListener('message', function (e) {
         vueApp.experience_mode = e.data[14];
         vueApp.experience_time = e.data[15];
 
-        vueApp.filter_mode = e.data[16];
-        vueApp.filter_param = e.data[17];
+
+        if(vueApp.couldUpdateGains){
+
+            vueApp.filterMode = e.data[16];
+            vueApp.filterValue = e.data[17];
+        }
 
     }
 

@@ -35,8 +35,8 @@ var vueApp = new Vue({
 
     experience_mode:'',
     experience_time:'',
-    filter_mode:'',
-    filter_param:'',
+    filterMode:'',
+    filterValue:'',
 
     host: localStorage.websocket_url,
     frequency: '0',
@@ -72,6 +72,26 @@ var vueApp = new Vue({
         this.worker.postMessage(JSON.stringify(data));
       }
       else { console.log("Invalid length"); }
+    },
+
+    setFilterMode: function() {
+      var data = {
+        command: "setFilterMode",
+        data: {
+          value: this.filterMode
+        }
+      };
+      this.worker.postMessage(JSON.stringify(data));
+  },
+
+    setFilterValue: function() {
+        var data = {
+          command: "setFilterValue",
+          data: {
+            value: this.filterValue
+          }
+        };
+        this.worker.postMessage(JSON.stringify(data));
     },
 
     preventTyping: function () {

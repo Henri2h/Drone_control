@@ -91,6 +91,17 @@ function setGains(pos, value) {
     toRead = 1;
 }
 
+//filter
+function setFilterMode(mode) {
+    socket.send("#SetFilterMode " + mode);
+    toRead = 1;
+}
+
+function setFilterValue(value) {
+    socket.send("#SetFilterValue " + value);
+    toRead = 1;
+}
+
 var mode = 0;
 function update() {
     if (connected) {
@@ -99,6 +110,12 @@ function update() {
             //console.log(commands[0]);
             if (commands[0].command == "setGain") {
                 setGains(commands[0].data.pos, commands[0].data.value);
+            }
+            else if(commands[0].command == "setFilterMode"){
+                setFilterMode(commands[0].data.value);
+            }
+            else if(commands[0].command == "setFilterValue"){
+                setFilterValue(commands[0].data.value);
             }
             commands.shift();
         }
