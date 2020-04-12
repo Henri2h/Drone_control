@@ -32,6 +32,10 @@ void Remote::sendData(WebSocket<SERVER> *ws, int *values, float *time_pointer, O
 
 void Remote::sendDataL(WebSocket<SERVER> *ws, Data *data, float *time_pointer, int length, OpCode opCode)
 {
+	// add params
+	data->status[status_filter_mode] = data->parameters[params_IMU_Filter_mode];
+	data->status[status_filter_param] = data->parameters[params_IMU_Filter_value];
+
 	// preparing results :
 	char const *time_str = to_string(*time_pointer).c_str();
 	for (size_t i = 0; i < length; i++)
@@ -335,9 +339,8 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				}
 				else if (L_r[0].compare("#SetFilterMode") == 0)
 				{
-					int index = std::stoi(L_r[1]);
 					// set values
-					data->parameters[params_IMU_Filter_mode] = std::stof(L_r[2]);
+					data->parameters[params_IMU_Filter_mode] = std::stof(L_r[1]);
 					FileManagement::Log("Remote", "Set filer mode " + std::to_string(data->parameters[params_IMU_Filter_mode]) + " ");
 
 					// save gains
@@ -347,9 +350,8 @@ void Remote::start_remote(Data *data_i, float *time_now_in)
 				}
 				else if (L_r[0].compare("#SetFilterValue") == 0)
 				{
-					int index = std::stoi(L_r[1]);
 					// set values
-					data->parameters[params_IMU_Filter_value] = std::stof(L_r[2]);
+					data->parameters[params_IMU_Filter_value] = std::stof(L_r[1]);
 					FileManagement::Log("Remote", "Set filer value " + std::to_string(data->parameters[params_IMU_Filter_value]) + " ");
 
 					// save gains

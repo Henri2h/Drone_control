@@ -125,6 +125,7 @@ void setup()
 
 	FileManagement::Log("Main : Setup", "Initializated");
 	led->setOK();
+	FileManagement::saveDataSettings(data);
 }
 
 void loop()

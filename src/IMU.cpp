@@ -81,10 +81,9 @@ IMU::IMU()
 
 void IMU::setMode(Data &data)
 {
-    
     //data.status[status_filter_mode] = IMU_Filter_usage_gyr;
-    filterUsage = data.status[status_filter_mode];
-    
+    filterUsage = data.parameters[params_IMU_Filter_mode];
+    w0Te = data.parameters[params_IMU_Filter_value];
 }
 
 void IMU::update()
