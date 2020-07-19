@@ -195,7 +195,7 @@ int *Stabilisation::Stabilize(Data &data, float dt)
         cmd[pid_roll] = utils::mapValue(cmd_raw[pid_roll], 1075, 1920, -MAX, MAX);
         cmd[pid_yaw] = -utils::mapValue(cmd_raw[pid_yaw], 1070, 1920, -MAX_YAW_SPEED, MAX_YAW_SPEED);
 
-        // map gains in necessary
+        // map gains if necessary
         int pos = data.status[status_gains_control_mode];
         if (pos > 0)
         {

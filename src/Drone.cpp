@@ -302,6 +302,7 @@ void InputMode()
 			}
 		}
 		refresh();
+		usleep(100000); // 100 ms
 	}
 }
 

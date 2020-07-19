@@ -117,6 +117,7 @@ function update() {
             else if(commands[0].command == "setFilterValue"){
                 setFilterValue(commands[0].data.value);
             }
+            // else, we have an issue...
             commands.shift();
         }
 
